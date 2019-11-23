@@ -1,47 +1,91 @@
 (* Author : CESally *)
-Require Export Setoid Ensembles Utf8.
+Require Import Notions.
 Reserved Notation "x @ y" (at level 20, left associativity).
 
 (* Declare Scope Groups. *)
-Delimit Scope group_scope with grp.
-Definition Included' {X:Type} A B := Included X A B.
-Definition In' {X:Type} e S := In X e S.
-Notation "e ∈ S" := (In' S e) (at level 20) : group_scope.
-Notation "A ⊆ B" := (Included' A B) (at level 20) : group_scope.
+
 Open Scope group_scope.
 
-Section Groups.
-Variable C : Type.
 
-Section Basic_laws.
-Variable D  : Ensemble C.
-Variable op : C -> C -> C.
-Variable e  : C.
+Module lGroups.
+Include Notions.T.
+Section Defn.
+Context {C : Type}.
+
+Record t : Type := mklgroup {
+  carrier  : Ensemble C;
+  op : C -> C -> C;
+  e  : C;
+  inv: C -> C;
+  closure : closed_b carrier op;
+  assoc   : is_assoc carrier op;
+
+  ein : e ∈ carrier;
+  lid : l_ident carrier op e;
+
+  invin : closed_u carrier inv;
+  linv  : l_inv carrier op e inv
+}.
+End Defn.
+
+
+Section Basics.
+Context {C : Type}.
+Variable (G: @t C).
+Variable (a b c  id: C).
+Hypothesis Ga : a ∈ G.(carrier).
+Hypothesis Gb : b ∈ G.(carrier).
+Hypothesis Gc : c ∈ G.(carrier).
+Hypothesis Gi : id ∈ G.(carrier).
+Local Notation e := (e G).
+Local Notation op := (op G).
+Local Notation assoc := (assoc G).
 Local Infix "@" := op (at level 20, left associativity).
+Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
-Definition is_assoc : Prop := ∀ x y z : C, x @ y @ z = x @ (y @ z).
+Hint Resolve (closure G) ein (invin G)  : lgrp.
+Hint Rewrite @assoc : lgrp.
 
-Definition l_ident : Prop := ∀ x, e @ x = x.
-Definition r_ident : Prop := ∀ x, x @ e = x.
-
-Definition l_inv (inv:C -> C) : Prop := ∀ x, inv x @ x = e.
-Definition r_inv (inv:C -> C) : Prop := ∀ x, x @ inv x = e.
-
-Definition closed_u (inv: C -> C) : Prop := ∀ x,
-  x ∈ D -> (inv x) ∈ D.
-Definition closed_b : Prop := ∀ x y,
-  x ∈ D ->
-  y ∈ D -> (x @ y) ∈ D.
-
-Definition is_l_inv_of (x' x e:C) : Prop := x' @ x = e.
-Definition is_r_inv_of (x' x e:C) : Prop := x @ x' = e.
-
-Definition conjugate (h g: C) (inv: C -> C) : C := h @ g @ (inv h).
-
-End Basic_laws.
+Theorem left_can : forall z x y, 
+  z ∈ G.(carrier) ->
+  x ∈ G.(carrier) ->
+  y ∈ G.(carrier) ->
+  z @ x = z @ y -> x = y.
+Proof with auto with lgrp.
+  intros * Gz Gx Gy H.
+  rewrite <- G.(lid), <- (G.(lid) y)...
+  rewrite <- (G.(linv) z)...
+  repeat rewrite assoc...
+  rewrite H...
+Qed.
 
 
-Section Grp_defn.
+Theorem lft_id_is_id: r_ident G.(carrier) op e.
+Proof with auto with lgrp.
+  intros ? **.
+  apply (left_can (x '))...
+  rewrite <- assoc...
+  repeat rewrite linv...
+  rewrite lid...
+Qed.
+
+
+Theorem lft_inv_is_inv: r_inv G.(carrier) op e G.(inv).
+Proof with auto with lgrp.
+  intros ? **. apply (left_can (x '))...
+  rewrite <- assoc, G.(linv),
+          G.(lid), lft_id_is_id...
+Qed.
+
+End Basics.
+End lGroups.
+
+
+Module Groups.
+Include T.
+Section Defn.
+Context {C : Type}.
+
 
 Record Group : Type := mkgroup {
   carrier  : Ensemble C;
@@ -49,38 +93,38 @@ Record Group : Type := mkgroup {
   e  : C;
   inv: C -> C;
   closure : closed_b carrier op;
-  assoc   : is_assoc op;
+  assoc   : is_assoc carrier op;
 
   ein : e ∈ carrier;
-  lid : l_ident op e;
-  rid : r_ident op e;
+  lid : l_ident carrier op e;
+  rid : r_ident carrier op e;
 
   invin : closed_u carrier inv;
-  linv  : l_inv op e inv;
-  rinv  : r_inv op e inv
+  linv  : l_inv carrier op e inv;
+  rinv  : r_inv carrier op e inv
 }.
 
 Definition is_Group (carrier : Ensemble C) (op: C -> C -> C)
                    (e: C) (inv: C -> C):=
   closed_b carrier op /\
-  is_assoc op /\
+  is_assoc carrier op /\
   e ∈ carrier /\
-  l_ident op e /\
-  r_ident op e /\
+  l_ident carrier op e /\
+  r_ident carrier op e /\
   closed_u carrier inv /\
-  l_inv op e inv /\
-  r_inv op e inv.
+  l_inv carrier op e inv /\
+  r_inv carrier op e inv.
 
 Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
                    (e: C) (inv: C -> C):=
   ~ closed_b carrier op \/
-  ~ is_assoc op \/
+  ~ is_assoc carrier op \/
   ~ e ∈ carrier \/
-  ~ l_ident op e \/
-  ~ r_ident op e \/
+  ~ l_ident carrier op e \/
+  ~ r_ident carrier op e \/
   ~ closed_u carrier inv \/
-  ~ l_inv op e inv \/
-  ~ r_inv op e inv.
+  ~ l_inv carrier op e inv \/
+  ~ r_inv carrier op e inv.
 
 
 
@@ -113,18 +157,15 @@ Inductive right_coset (g: C): Ensemble C :=
   rgt_cs: subgroup ->
           h @ g ∈ (right_coset g).
 End Subgroups.
-End Grp_defn.
-End Groups.
+End Defn.
+
 
 Arguments subgroup [_].
 Notation "A ≤ B" := (subgroup A B) (at level 70) : group_scope.
 
 Section Homomorphisms.
-Arguments carrier [_].
-Arguments op [_].
-Arguments e [_].
 Variable (C D: Type).
-Variable (G: Group C) (H: Group D).
+Variable (G: @Group C) (H: @Group D).
 Variable (g g1 g2: C) (h h1 h2: D).
 Hypothesis Gg: g ∈ G.(carrier).
 Hypothesis G1: g1 ∈ G.(carrier).
@@ -153,4 +194,9 @@ Close Scope group_scope.
 
 Create HintDb grp.
 Hint Unfold is_assoc l_ident r_ident l_inv r_inv 
-            In' In Included' Included carrier: grp.
+            In Included carrier lid rid linv rinv: grp.
+Ltac atg := auto with grp.
+
+
+End Groups.
+Close Scope group_scope.
