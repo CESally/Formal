@@ -1,5 +1,5 @@
 (* Author : CESally *)
-Require Import Notions.
+Require Export Notions.
 Reserved Notation "x @ y" (at level 20, left associativity).
 
 (* Declare Scope Groups. *)
@@ -32,7 +32,7 @@ End Defn.
 Section Basics.
 Context {C : Type}.
 Variable (G: @t C).
-Variable (a b c  id: C).
+Variable (a b c id: C).
 Hypothesis Ga : a ∈ G.(carrier).
 Hypothesis Gb : b ∈ G.(carrier).
 Hypothesis Gc : c ∈ G.(carrier).
