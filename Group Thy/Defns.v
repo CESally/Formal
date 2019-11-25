@@ -163,12 +163,12 @@ Definition normal_comm : Prop :=
 
 Export BinPos.Pos.
 Close Scope positive_scope.
-Definition rep_aux (x: C) := iter (fun y => x @ y) G.(e).
+Definition rep_aux (id x: C) := iter (fun y => x @ y) id.
 
 Definition rep (n: Z) : C :=
   match n with
-  | Zpos p => rep_aux g p
-  | Zneg p => rep_aux (g ') p
+  | Zpos p => rep_aux G.(e) g p
+  | Zneg p => rep_aux G.(e) (g ') p
   | Z0     => G.(e)
   end.
 

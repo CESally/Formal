@@ -101,7 +101,7 @@ Proof with atg.
 Qed.
 
 Theorem rep_aux_in : ∀ {x p} {Gx: x ∈ carrier},
-  rep_aux x p ∈ carrier.
+  rep_aux e x p ∈ carrier.
 Proof with auto.
   intros **. unfold rep_aux.
   apply iter_invariant;[| exact G.(ein)].
