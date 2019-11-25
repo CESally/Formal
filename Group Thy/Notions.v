@@ -9,7 +9,7 @@ Notation "e ∈ S" := (In S e) (at level 20) : group_scope.
 Notation "A ⊆ B" := (Included A B) (at level 20) : group_scope.
 Open Scope group_scope.
 
-Module T.
+
 Section top.
 Context {C : Type}.
 Variable D  : Ensemble C.
@@ -35,7 +35,7 @@ Definition l_ident : Prop := ∀ x, x ∈ D -> e @ x = x.
 Definition r_ident : Prop := ∀ x, x ∈ D -> x @ e = x.
 Definition   ident : Prop := ∀ x, x ∈ D -> e @ x = x /\ x @ e = x.
 
-Definition l_inv (inv:C -> C) : Prop := ∀ x, x ∈ D -> x ∈ D -> inv x @ x = e.
+Definition l_inv (inv:C -> C) : Prop := ∀ x, x ∈ D -> inv x @ x = e.
 Definition r_inv (inv:C -> C) : Prop := ∀ x, x ∈ D -> x @ inv x = e.
 
 Definition closed_u (inv: C -> C) : Prop := ∀ x,
@@ -49,6 +49,6 @@ Definition is_r_inv_of (x' x e:C) : Prop := x @ x' = e.
 Definition conjugate (h g: C) (inv: C -> C) : C := h @ g @ (inv h).
 
 End top.
-End T.
+
 
 Close Scope group_scope.
