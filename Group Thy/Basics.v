@@ -1,3 +1,4 @@
+(* Author : CESally *)
 Require Import Defns.
 Import Pos.
 
@@ -560,6 +561,46 @@ Proof with atg.
   apply inj in Z... rewrite <- Z...
 Qed.
 
+Theorem g_conjugate_iso : is_Isomorphism G G (fun x => g @ x @ g ').
+Proof with atg.
+    assert (is_Homomorphism G G (λ x : C, g @ x @ g ')). {
+      split.
+      - intros x Gx. apply closure...
+      - intros a b Ga Gb.
+        rewrite (assoc G (g@a)), <- (assoc G (g ')),
+                <- (assoc G (g ')), linv, lid...
+        repeat rewrite assoc...
+    }
+  exists H0.
+    assert (is_Homomorphism G G (fun x => g ' @ x @ g)). {
+      split. - intros x Gx. apply closure...
+      - intros **. rewrite (assoc G (g '@a)),
+                   <- (assoc G (g)),
+                   <- (assoc G (g)), rinv, lid...
+        repeat rewrite assoc...
+    }
+  exists (mkhomo _ _ H3). split.
+  - intros x Gx. simpl.
+    repeat rewrite assoc...
+    rewrite linv, rid, <- assoc, linv...
+  - intros x Gx. simpl.
+    repeat rewrite assoc...
+    rewrite rinv, rid, <- assoc, rinv...  
+Qed.
+
+
+Theorem bill : is_Isomorphic G G.
+Proof with atg.
+  assert (is_Homomorphism G G (fun x => x)).
+  split... intros x... 
+  assert (is_Isomorphism G G (fun x => x)). {
+  exists H0.
+  unfold Bijective. exists (mkhomo _ _ H0).
+  split; intros ? ?... }
+  
+  exists (mkiso _ _ H3).
+  
+  unfold is_Isomorphism.
 
 
 End twoG.
