@@ -107,6 +107,22 @@ Record Group : Type := mkgroup {
   rinv  : r_inv carrier op e inv
 }.
 
+Coercion carrier: Group >-> Ensemble.
+
+Remark group_facts : forall G: Group,
+  closed_b G.(carrier) G.(op) /\
+  is_assoc G.(carrier) G.(op) /\
+  G.(e) ∈ G.(carrier) /\
+  l_ident G.(carrier) G.(op) G.(e) /\
+  r_ident G.(carrier) G.(op) G.(e) /\
+  closed_u G.(carrier) G.(inv) /\
+  l_inv G.(carrier) G.(op) G.(e) G.(inv) /\
+  r_inv G.(carrier) G.(op) G.(e) G.(inv).
+Proof.
+  destruct G; repeat (split; auto).
+Qed.
+
+
 Definition is_Group (carrier : Ensemble C) (op: C -> C -> C)
                    (e: C) (inv: C -> C):=
   closed_b carrier op /\
@@ -117,6 +133,13 @@ Definition is_Group (carrier : Ensemble C) (op: C -> C -> C)
   closed_u carrier inv /\
   l_inv carrier op e inv /\
   r_inv carrier op e inv.
+
+Corollary G_is_grp : forall G : Group,
+ is_Group G.(carrier) G.(op) G.(e) G.(inv).
+Proof.
+  intros. decompose [and] (group_facts G).
+  repeat split; auto.
+Qed.
 
 Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
                    (e: C) (inv: C -> C):=
@@ -133,33 +156,42 @@ Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
 
 Section Subgroups.
 Variable (H N G: Group) (h n g g1 g2: C).
-Hypothesis Hh: h ∈ H.(carrier).
-Hypothesis Nn: n ∈ N.(carrier).
-Hypothesis Gg: g ∈ G.(carrier).
-Hypothesis G1: g1 ∈ G.(carrier).
-Hypothesis G2: g2 ∈ G.(carrier).
+Hypothesis Hh: h ∈ H.
+Hypothesis Nn: n ∈ N.
+Hypothesis Gg: g ∈ G.
+Hypothesis G1: g1 ∈ G.
+Hypothesis G2: g2 ∈ G.
 Local Infix "@" := G.(op) (at level 20, left associativity).
 Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
 
 Inductive subgroup_ind : Prop :=
   Definition_of_sgrp :
-    H.(carrier) ⊆ G.(carrier) ->
-    H.(op) = G.(op) -> subgroup_ind.
+    H ⊆ G -> H.(op) = G.(op) -> subgroup_ind.
 
 Definition subgroup_prop : Prop :=
-    H.(carrier) ⊆ G.(carrier) /\
-    H.(op) = G.(op).
+    H ⊆ G /\ H.(op) = G.(op).
+
+Definition is_Subgroup_of (carrier : Ensemble C):=
+  carrier ⊆ G /\
+  closed_b carrier G.(op) /\
+  is_assoc carrier G.(op) /\
+  G.(e) ∈ carrier /\
+  l_ident carrier G.(op) G.(e) /\
+  r_ident carrier G.(op) G.(e) /\
+  closed_u carrier G.(inv) /\
+  l_inv carrier G.(op) G.(e) G.(inv) /\
+  r_inv carrier G.(op) G.(e) G.(inv).
 
 
 Local Notation subgroup := subgroup_prop.
 
 Definition normal_subgroup : Prop :=
   subgroup /\
-  n @ g @ (N.(inv) n) ∈ N.(carrier).
+  n @ g @ (N.(inv) n) ∈ N.
 
 Definition normal_comm : Prop :=
-  g1 @ g2 ∈ N.(carrier) <-> g2 @ g1 ∈ N.(carrier).
+  g1 @ g2 ∈ N <-> g2 @ g1 ∈ N.
 
 Export BinPos.Pos.
 Close Scope positive_scope.
@@ -197,12 +229,12 @@ Section top.
 Context {C D: Type}.
 Variable (G: @Group C) (H: @Group D).
 Variable (g g1 g2: C) (h h1 h2: D).
-Hypothesis Gg: g ∈ G.(carrier).
-Hypothesis G1: g1 ∈ G.(carrier).
-Hypothesis G2: g2 ∈ G.(carrier).
-Hypothesis Hh: h ∈ H.(carrier).
-Hypothesis H1: h1 ∈ H.(carrier).
-Hypothesis H2: h2 ∈ H.(carrier).
+Hypothesis Gg: g  ∈ G.
+Hypothesis G1: g1 ∈ G.
+Hypothesis G2: g2 ∈ G.
+Hypothesis Hh: h  ∈ H.
+Hypothesis H1: h1 ∈ H.
+Hypothesis H2: h2 ∈ H.
 Infix "@" := G.(op) (at level 20, left associativity).
 Infix "+" := H.(op) (at level 50, left associativity).
 
@@ -243,12 +275,12 @@ Section inverse.
 Context {C D: Type}.
 Variable (G: @Group C) (H: @Group D).
 Variable (g g1 g2: C) (h h1 h2: D).
-Hypothesis Gg: g  ∈ G.(carrier).
-Hypothesis G1: g1 ∈ G.(carrier).
-Hypothesis G2: g2 ∈ G.(carrier).
-Hypothesis Hh: h  ∈ H.(carrier).
-Hypothesis H1: h1 ∈ H.(carrier).
-Hypothesis H2: h2 ∈ H.(carrier).
+Hypothesis Gg: g  ∈ G.
+Hypothesis G1: g1 ∈ G.
+Hypothesis G2: g2 ∈ G.
+Hypothesis Hh: h  ∈ H.
+Hypothesis H1: h1 ∈ H.
+Hypothesis H2: h2 ∈ H.
 Infix "@" := G.(op) (at level 20, left associativity).
 Infix "+" := H.(op) (at level 50, left associativity).
 
@@ -256,11 +288,11 @@ Infix "+" := H.(op) (at level 50, left associativity).
 (* Require Import FinFun. *)
 Definition Bijective (f: homomorphism G H) :=
   ∃ f' : (homomorphism H G),
-    (∀ x, x ∈ G.(carrier) -> (f':fn) ((f :fn) x) = x) /\
-    (∀ y, y ∈ H.(carrier) -> (f :fn) ((f':fn) y) = y).
+    (∀ x, x ∈ G -> (f':fn) ((f :fn) x) = x) /\
+    (∀ y, y ∈ H -> (f :fn) ((f':fn) y) = y).
 
 Definition Injective (f: homomorphism G H) :=
-  ∀ x y, x ∈ G.(carrier) -> y ∈ G.(carrier) ->
+  ∀ x y, x ∈ G -> y ∈ G ->
   (f:fn) x = (f:fn) y -> x = y.
 
 Definition Surjective (f: homomorphism G H) :=
@@ -292,7 +324,8 @@ Proof with auto.
   apply homo_img_in...
 Qed.
 
-Lemma Bi2I_S : ∀ {f: homomorphism G H}, Bijective f -> Injective f /\ Surjective f.
+Lemma Bi2I_S : ∀ {f: homomorphism G H}, Bijective f ->
+                  Injective f /\ Surjective f.
 Proof with auto.
   intros * [f' [f'f ff']].
   split.
@@ -320,9 +353,17 @@ Ltac dhomo f := destruct f as [bbob [?ghomo ?sp]]; simpl in *;
                 clear f; rename bbob into f.
 Ltac diso  f := destruct f as [[bbob [?ghomo ?sp]] bi];
                 b2is' bi; destruct bi as [f' [f'f ff']];
-                
                 clear f; rename bbob into f; simpl in *.
-Close Scope group_scope.
+
+Ltac is_grp  := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
+Ltac is_sgrp := split;[|split;[|split;[|split;[|split;[|split;[|split;
+                [|split]]]]]]].
+
+
+
+
+
+
 
 Create HintDb grp.
 Hint Resolve homo_img_in : grp.
@@ -332,6 +373,6 @@ Local Hint Resolve @closure @ein @lid @rid
                    @invin @linv @rinv
                    : grp.
 Local Hint Rewrite @assoc : grp.
-Ltac atg := auto with grp.
-
+Ltac atg  :=  auto with grp.
+Ltac eatg := eauto with grp.
 Close Scope group_scope.

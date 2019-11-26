@@ -3,15 +3,15 @@ Import Pos.
 
 
 Open Scope group_scope.
-Section oneG.
+Section elementary.
 Context {C : Type}.
 Variable (G: @Group C).
-Variable (a b c (* id *): C).
-Local Hint Resolve (closure G) ein (invin G) (linv G) (rinv G)
-             (lid G) (rid G): grp.
+Variable (a b c : C).
+Local Hint Resolve
+(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+: grp.
 Local Hint Rewrite @assoc : grp.
 
-Local Notation carrier := (carrier G).
 Local Notation op := (op G).
 Local Notation assoc := (assoc G).
 Local Notation e := (e G).
@@ -19,24 +19,20 @@ Local Notation linv := (linv G).
 Local Notation rinv := (rinv G).
 Local Notation lid := (lid G).
 Local Notation rid := (rid G).
-Local Notation l_ident := (l_ident op).
-Local Notation r_ident := (r_ident op).
+Local Notation ident := (ident G op).
+Local Notation l_ident := (l_ident G op).
+Local Notation r_ident := (r_ident G op).
 Local Notation rep_aux := (rep_aux G).
-Local Notation idempotent := (idempotent carrier op).
-Local Notation order2 := (order2 carrier op e).
-
-Hypothesis Ga : a ∈ carrier.
-Hypothesis Gb : b ∈ carrier.
-Hypothesis Gc : c ∈ carrier.
-(* Hypothesis Gi : id ∈ carrier. *)
-
+Local Notation idempotent := (idempotent G op).
+Local Notation order2 := (order2 G op e).
+Hypothesis Ga : a ∈ G.
+Hypothesis Gb : b ∈ G.
+Hypothesis Gc : c ∈ G.
 Local Infix "@" := op (at level 20, left associativity).
 Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
 Theorem left_can : forall z {x y},
-  x ∈ carrier ->
-  y ∈ carrier ->
-  z ∈ carrier ->
+  x ∈ G -> y ∈ G -> z ∈ G ->
   z @ x = z @ y -> x = y.
 Proof with atg.
   intros * Gz Gx Gy H.
@@ -47,16 +43,47 @@ Proof with atg.
 Qed.
 
 Theorem right_can : forall z {x y},
-  x ∈ carrier ->
-  y ∈ carrier ->
-  z ∈ carrier ->
+  x ∈ G -> y ∈ G -> z ∈ G ->
   x @ z = y @ z -> x = y.
 Proof with atg.
   intros * Gz Gx Gy H.
-  rewrite <- rid, <- (rid y)...
-  rewrite <- (rinv z)...
+  rewrite <- rid, <- (rid y),
+          <- (rinv z)...
   repeat rewrite <- assoc...
   rewrite H...
+Qed.
+
+Theorem l_gives_r_id : ∀ x,
+  l_ident x -> r_ident x.
+Proof with atg.
+  intros x xlid y Gx Gy...
+  apply (right_can y)...
+  rewrite assoc, xlid...
+Qed.
+
+Theorem r_gives_l_id : ∀ x,
+  r_ident x -> l_ident x.
+Proof with atg.
+  intros x xrid y Gx Gy...
+  apply (left_can y)...
+  rewrite <- assoc, xrid...
+Qed.
+
+Theorem e_unique :∀ id, id ∈ G ->
+  ident id -> id = e.
+Proof with atg.
+  intros **. destruct (H0 e)...
+  apply (left_can e)...
+  symmetry; rewrite H2...
+Qed.
+
+Theorem inv_unique : ∀ a', a' ∈ G ->
+  a' @ a = e ->
+  a @ a' = e ->
+  a' = a '.
+Proof with atg.
+  intros **. apply (left_can a)...
+  symmetry; rewrite H1...
 Qed.
 
 Theorem e_own_inv : e ' = e.
@@ -65,50 +92,90 @@ Proof with atg.
   rewrite rinv, lid...
 Qed.
 
-Theorem xii__x : forall x, x ∈ carrier -> x ' ' = x.
+Theorem xii__x : forall x, x ∈ G ->
+  x ' ' = x.
 Proof with atg.
   intros **. apply (left_can (x '))...
   rewrite rinv, linv...
 Qed.
 
-Theorem id_unique : ∀ id, id ∈ carrier -> ident carrier op id -> id = e.
+Theorem lunique_sol : ∀ g1 g2
+  (G1: g1 ∈ G) (G2: g2 ∈ G),
+  exists! x, x ∈ G /\
+  x @ g1 = g2.
 Proof with atg.
-  intros **. destruct (H0 e)...
-  apply (left_can e)...
-  symmetry; rewrite H2...
+  intros **. exists (g2 @ g1 '); split.
+  - split... rewrite assoc, linv...
+  - intros ? []. rewrite <- H0, assoc, rinv...
 Qed.
 
-Theorem inv_unique : ∀ a', a' ∈ carrier -> a' @ a = e -> a @ a' = e ->
-  a' = a '.
+Theorem runique_sol : ∀ g1 g2
+  (G1: g1 ∈ G) (G2: g2 ∈ G),
+  exists! x, x ∈ G /\
+  a @ x = b.
 Proof with atg.
-  intros **. apply (left_can a)...
-  symmetry; rewrite H1...
+  intros **. exists (a ' @ b); split.
+  - rewrite <- assoc, rinv...
+  - intros ? []. rewrite <- H0, <- assoc, linv...
+Qed.
+
+Theorem e_is_lunique_sol_aa :
+  exists! x, x ∈ G /\
+  x @ a = a /\ x = e.
+Proof with atg.
+  exists e. repeat split...
+  - intros Ge [_ [_ ->]]...
+Qed.
+
+Theorem e_is_lunique_sol_aa' :
+  exists! x, x ∈ G /\
+  x @ a = a /\ ident x.
+Proof with atg.
+  exists e. repeat split...
+  intros Ge [GGe [_ ?]].
+  rewrite e_unique...
+Qed.
+
+Theorem e_is_runique_sol_aa :
+  exists! x, x ∈ G /\
+  a @ x = a /\ x = e.
+Proof with atg.
+  exists e. repeat split...
+  - intros Ge [_ [_ ->]]...
+Qed.
+
+Theorem e_is_runique_sol_aa' :
+  exists! x, x ∈ G /\
+  a @ x = a /\ ident x.
+Proof with atg.
+  exists e. repeat split...
+  intros Ge [GGe [_ ?]].
+  rewrite e_unique...
 Qed.
 
 Theorem inv_of_op : ∀ x y
-  (Gx: x ∈ carrier)
-  (Gy: y ∈ carrier),
+  (Gx: x ∈ G)
+  (Gy: y ∈ G),
   (x @ y) ' = y ' @ x '.
 Proof with atg.
   intros **.
   apply (left_can (x @ y))...
-  symmetry;
-  rewrite rinv,
-          <- assoc,
-          (assoc x),
-          rinv,
-          rid...
+  symmetry; rewrite rinv,
+                    <- assoc,
+                    (assoc x),
+                    rinv,
+                    rid...
 Qed.
 
-Theorem rep_aux_in : ∀ {x p} {Gx: x ∈ carrier},
-  rep_aux e x p ∈ carrier.
+Theorem rep_aux_in : ∀ {x p} {Gx: x ∈ G},
+  rep_aux e x p ∈ G.
 Proof with auto.
   intros **. unfold rep_aux.
   apply iter_invariant;[| exact G.(ein)].
   intros **. apply closure...
 Qed.
 
-Theorem rep_in : ∀ i, @rep C G a i ∈ carrier.
+Theorem rep_in : ∀ i, @rep C G a i ∈ G.
 Proof with auto.
   pose proof G.(ein).
   destruct i; simpl; auto;
@@ -121,26 +188,12 @@ Local Open Scope Z_scope.
 
 Theorem cyclic_inv : ∀ i, (@rep C G a i) ' = @rep C G a (- i).
 Proof with auto.
-  destruct i; simpl.
-  - exact e_own_inv.
-  - induction p. 3:{
-    unfold rep_aux. simpl.
-    repeat rewrite rid...
-    apply invin... }
-    +
- unfold rep_aux in *. simpl.
-  rewrite inv_of_op.
-  rewrite <- IHp.
-      apply iter_invariant.
-intros **. rewrite <- H.
-
-  simpl.
-
-Qed.
+Admitted.
 
 
 
-Theorem idem__ident : ∀ x, x ∈ carrier -> (idempotent x) -> ident carrier op x.
+Theorem idem__ident : ∀ x, x ∈ G ->
+  (idempotent x) -> ident x.
 Proof with atg.
   intros ? ? [Gx idem] y Gy. split.
   - apply (left_can x)...
@@ -149,33 +202,20 @@ Proof with atg.
     rewrite assoc, idem...
 Qed.
 
-Theorem idem__unique : ∀ x y,
-  x ∈ carrier ->
-  y ∈ carrier ->
-  (idempotent x) ->
-  (idempotent y) -> x = y.
+Theorem idem__unique : ∀ x y
+  (Gx: x ∈ G)
+  (Gy: y ∈ G)
+  (idemx: idempotent x)
+  (idemy: idempotent y),
+  x = y.
 Proof with atg.
-  intros.
-  apply idem__ident, id_unique in H1...
-  apply idem__ident, id_unique in H2...
-  rewrite H1, H2...  
+  intros **.
+  apply idem__ident, e_unique in idemx...
+  apply idem__ident, e_unique in idemy...
+  subst...
 Qed.
 
-Theorem lunique_sol: exists! x, x ∈ carrier /\ x @ a = b.
-Proof with atg.
-  exists (b @ a '); split.
-  - split... rewrite assoc, linv...
-  - intros ? []. rewrite <- H0, assoc, rinv...
-Qed.
-
-Theorem runique_sol: exists! x, x ∈ carrier /\ a @ x = b.
-Proof with atg.
-  exists (a ' @ b); split.
-  - rewrite <- assoc, rinv...
-  - intros ? []. rewrite <- H0, <- assoc, linv...
-Qed.
-
-Theorem order2__abelian : (∀ x, order2 x) -> is_comm carrier op.
+Theorem order2__abelian : (∀ x, order2 x) -> is_comm G op.
 Proof with atg.
   intros o2 x y Gx Gy. apply (left_can x), (right_can y)...
   repeat rewrite <- assoc...
@@ -185,9 +225,10 @@ Proof with atg.
   rewrite o2x, lid, o2y, (assoc (x@y))...
 Qed.
 
-Theorem inv_comm__abelian : (a @ b) ' = a ' @ b ' <-> a @ b = b @ a.
+Theorem inv_comm__abelian :
+  (a @ b) ' = a ' @ b ' <-> a @ b = b @ a.
 Proof with atg.
-  rewrite inv_of_op. split; intros H.
+  rewrite inv_of_op... split; intros H.
   - apply (left_can (a '))...
     rewrite <- assoc, linv, lid...
     apply (left_can (b '))...
@@ -213,7 +254,253 @@ Proof with atg.
     rewrite <- assoc...
 Qed.
 
-End oneG.
+End elementary.
+
+Section subgroups1.
+Context {C : Type}.
+Context {K H G: @ Group C}.
+Local Hint Resolve
+(closure K) (ein K) (lid K) (rid K) (invin K) (linv K) (rinv K)
+(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
+(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+              : grp.
+Local Hint Rewrite @assoc : grp.
+
+
+Theorem subgroup_has_same_e : H ≤ G ->
+  H.(e) = G.(e).
+Proof with atg.
+  intros [HiG Sm_o].
+  destruct (lunique_sol G H.(e) H.(e))
+    as [eG [[GeG X] uniG]]...
+  rewrite <- (uniG G.(e)) by (split; atg).
+  rewrite <- (uniG H.(e)) by (
+    split;[|rewrite <- Sm_o, H.(lid)]; atg).
+  auto.
+Qed.
+
+Lemma subgroup_contains_e : H ≤ G ->
+  G.(e) ∈ H.
+Proof with atg.
+  intros HsgG.
+  rewrite <- (subgroup_has_same_e HsgG)...
+Qed.
+
+Lemma subgroup_has_same_invs : H ≤ G ->
+  ∀ a, a ∈ H ->
+  H.(inv) a = G.(inv) a.
+Proof with atg.
+  intros HsgG a Ha.
+  pose proof HsgG as [HiG Sm_o].
+  pose proof (subgroup_has_same_e HsgG) as Sm_e.
+  destruct (lunique_sol G a H.(e))
+    as [a' [[GeG X] uniG]]...
+  rewrite <- (uniG (G.(inv) a)) by (split;[|rewrite Sm_e];atg).
+  rewrite <- (uniG (H.(inv) a)) by (split;[|rewrite <- Sm_o];atg).
+  auto.
+Qed.
+
+Theorem trivial_sg : is_Subgroup_of G (fun x => x = G.(e)).
+Proof with atg.
+  is_sgrp...
+  - intros x ->...
+  - intros x y -> ->...
+  - intros x y z -> -> ->.
+    apply assoc...
+  - intros x _ ->...
+  - intros x _ ->...
+  - intros x ->. rewrite e_own_inv...
+  - intros x ->...
+  - intros x ->...
+Qed.
+
+
+End subgroups1.
+
+Section subgroups2.
+Context {C : Type}.
+Context {K H G: @ Group C}.
+Local Hint Resolve
+(closure K) (ein K) (lid K) (rid K) (invin K) (linv K) (rinv K)
+(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
+(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+              : grp.
+Local Hint Rewrite @assoc : grp.
+
+Variable (a b c : C).
+Local Infix "@" := G.(op) (at level 20, left associativity).
+Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+
+Lemma intersection_preserves_sgness : K ≤ G -> H ≤ G ->
+  is_Subgroup_of G (fun x => x ∈ H /\ x ∈ K).
+Proof with eatg.
+  intros KsgG HsgG.
+  pose proof KsgG as [KiG sok].
+  pose proof HsgG as [HiG soh]. is_sgrp...
+  - intros x [Hx Kx]...
+  - intros x y [Hx Kx] [Hy Ky].
+    split;[rewrite <- soh|rewrite <- sok];
+    apply closure...
+  - intros x y z [Hx _] [Hy _] [Hz _].
+    apply assoc...
+  - split; erewrite <- (subgroup_has_same_e)...
+  - intros x [] []. rewrite lid...
+  - intros x [] []. rewrite rid...
+  - intros x [Hx Kx]. split;
+    erewrite <- subgroup_has_same_invs...
+  - intros x [Hx Kx]. rewrite linv...
+  - intros x [Hx Kx]. rewrite rinv...
+Qed.
+
+
+
+Theorem comm_around_a_subgroup : a ∈ G ->
+is_Subgroup_of G (fun x => x ∈ G /\ x @ a = a @ x).
+Proof with atg.
+  intros Ga. is_sgrp.
+  - intros x [Gx _]...
+  - intros x y [Gx xac] [Hy yac]; split.
+    + apply closure...
+    + rewrite assoc, yac, <- assoc,
+      xac, assoc...
+  - intros x y z [Gx _] [Gy _] [Gz _].
+    apply assoc...
+  - split... rewrite lid, rid...
+  - intros x _ [Gx _]. rewrite lid...
+  - intros x _ [Gx _]. rewrite rid...
+  - intros x [Gx xac]. split...
+    apply (@left_can C G x)...
+    repeat rewrite <- assoc...
+    rewrite rinv, lid, xac, assoc,
+            rinv, rid...
+  - intros x [Gx _]. apply linv...
+  - intros x [Gx _]. apply rinv...
+Qed.
+
+End subgroups2.
+
+Section semiconcreteSG.
+Context {C : Type}.
+Context {G: @ Group C}.
+Variable (a b c : C).
+Local Hint Resolve
+(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+              : grp.
+Local Hint Rewrite @assoc : grp.
+Local Notation carrier := (carrier G).
+Local Notation assoc := (assoc G).
+Local Notation op := (op G).
+Local Notation e := (e G).
+Local Notation inv := (inv G).
+Local Notation linv := (linv G).
+Local Notation rinv := (rinv G).
+Local Notation lid := (lid G).
+Local Notation rid := (rid G).
+Local Notation l_ident := (l_ident op).
+Local Notation r_ident := (r_ident op).
+
+Hypothesis Ga : a ∈ carrier.
+Hypothesis Gb : b ∈ carrier.
+Hypothesis Gc : c ∈ carrier.
+Local Infix "@" := op (at level 20, left associativity).
+Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+
+Definition H_triv : @Group C.
+Proof with atg.
+  refine (mkgroup
+    (fun x => x = e)
+    op e inv
+    _ _ _ _ _ _ _ _
+  )...
+  - intros x y -> ->. rewrite lid...
+  - intros x y z -> -> ->.
+    repeat rewrite lid...
+  - intros x _ ->...
+  - intros x _ ->...
+  - intros x ->...
+    rewrite e_own_inv...
+  - intros x ->...
+  - intros x ->...
+Defined.
+
+Theorem trivial_sg_con : H_triv ≤ G.
+Proof with auto.
+  split... intros x ->. exact G.(ein).
+Qed.
+
+
+
+Definition H_a : @Group C.
+Proof with atg.
+  refine (mkgroup
+    (fun x => x ∈ carrier /\ x @ a = a @ x)
+    op e inv
+    _ _ _ _ _ _ _ _
+  ).
+  - intros x y [Gx xac] [Hy yac]; split.
+    + apply closure...
+    + rewrite assoc, yac, <- assoc,
+      xac, assoc...
+  - intros x y z [Gx _] [Gy _] [Gz _].
+    apply assoc...
+  - split... rewrite lid, rid...
+  - intros x _ [Gx _] . rewrite lid...
+  - intros x _ [Gx _]. rewrite rid...
+  - intros x [Gx xac]. split...
+    apply (@left_can C G x)...
+    repeat rewrite <- assoc...
+    rewrite rinv, lid, xac, assoc,
+            rinv, rid...
+  - intros x [Gx _]. apply linv...
+  - intros x [Gx _]. apply rinv...
+Defined.
+
+Theorem comm_around_a_subgroup_con: H_a ≤ G.
+Proof with auto.
+  split... + intros x [Gx _]...
+Qed.
+
+Definition H_S : @Group C.
+Proof with atg.
+  refine (mkgroup
+    (fun x => x ∈ carrier /\ ∀ S s (Sub:S ⊆ carrier) (Ss:s ∈ S),
+                              x @ s = s @ x )
+    op e inv
+    _ _ _ _ _ _ _ _
+  ).
+  - intros x y [Gx Sxc] [Gy Syc].
+    split... intros **.
+    specialize (Sxc S s Sub Ss).
+    specialize (Syc S s Sub Ss).
+    rewrite assoc, Syc, <- assoc, Sxc,
+    assoc...
+  - intros x y z [Gx _] [Gy _] [Gz _].
+    apply assoc...
+  - split... intros **. rewrite lid, rid...
+  - intros x _ [Gx _]. rewrite lid...
+  - intros x _ [Gx _]. rewrite rid...
+  - intros x [Gx Sxc]. split... intros **.
+    apply (@left_can C G x)...
+    repeat rewrite <- assoc...
+    rewrite rinv, (Sxc _ _ Sub Ss),
+    lid, assoc, rinv, rid...
+  - intros x [Gx _]. rewrite linv...
+  - intros x [Gx _]. rewrite rinv...
+Defined.
+
+Theorem comm_around_all_subsets_subgroup_con : H_S ≤ G.
+Proof with auto.
+  split... + intros x [Gx _]...
+Qed.
+
+
+
+
+
+
+
+
+End semiconcreteSG.
 
 Section twoG.
 Context {C D : Type}.
@@ -252,7 +539,7 @@ Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 Local Notation "a '!'" := (inv H a) (at level 2, left associativity).
 
 Open Scope group_scope.
-(* Section isomorphism. *)
+
 Variable (f: isomorphism G H).
 
 Theorem iso_preserves_id : ((f: fn) G.(e)) = H.(e).
@@ -276,98 +563,3 @@ Qed.
 
 
 End twoG.
-
-
-
-
-
-
-
-
-
-End Trivialities.
-
-
-
-
-
-
-
-
-Local Open Scope Z_scope.
-
-
-
-Local Open Scope positive_scope.
-
-
-
-Theorem rep_i_j__ij : forall (i j: Z), rep i @ rep j = rep (i + j).
-Proof with eauto.
-  pose proof G.(ein). pose proof rep_in.
-  pose proof @rep_aux_in.
-  destruct i;[intros; simpl; rewrite G.(lid);auto| |];
-  destruct j; simpl; try rewrite G.(rid)...
-  3:{ apply H2. apply invin... }
-  - unfold rep_aux. apply iter_invariant.
-    + intros x A. rewrite assoc...
-      rewrite A. 
-  -
-  -
-  - 
-
- destruct i, j; intros *;
-  simpl; try progress [rewrite G.(lid) | ; auto; try eapply rep_aux_in]. -
-  rewrite G.(lid);auto; try eapply rep_aux_in.
-  eapply rep_aux_in.
-  - simpl. rewrite G.(lid)...
-
-  - unfold rep.
-  
-  induction i as [|i IHi]; simpl; intros j.
-  - rewrite lid... apply rep_in.
-  - rewrite <- IHi. apply assoc; try apply rep_in.
-    destruct b... apply invin...
-Qed.
-
-Theorem rep_i_j__ij : for
-
-Theorem cyclicSG : is_Group
-  (fun x => x ∈ G.(carrier) /\ exists n, rep n = x)
-  G.(op)
-  G.(e)
-  G.(inv).
-Proof with auto.
-  split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
-  - intros x y [Gx [i gi]] [Gy [j gj]]. split.
-    + apply closure...
-    + exists (i + j). rewrite <- rep_i_j__ij.
-      subst...
-  - intros x * [Gx _] [Gy _] [Gz _].
-    apply assoc...
-  - split;[exact G.(ein) | exists 0]...
-  - intros x [Gx _]. rewrite G.(lid)...
-  - intros x [Gx _]. rewrite G.(rid)...
-  - intros x [Gx [i gi]]. split.
-    + apply G.(invin)...
-    + .
-  - intros x [Gx _]. apply G.(linv)...
-  - intros x [Gx _]. apply G.(rinv)...
-Qed.
-    
-    
-    
-  do 2 split. 2: split.
-  3: split.
-4: split.
-5: split. admit. admit. admit. admit. admit.
-split. admit. split.
-3:{ split.
-
- 2: split.
-  repeat split.
-  
-  apply closure. 
-  unfold In in H0.
-Qed.
-
