@@ -11,84 +11,8 @@ Reserved Notation "x @ y" (at level 20, left associativity).
 
 Open Scope group_scope.
 
-
-Module lGroups.
 Section Defn.
 Context {C : Type}.
-
-Record t : Type := mklgroup {
-  carrier  : Ensemble C;
-  op : C -> C -> C;
-  e  : C;
-  inv: C -> C;
-  closure : closed_b carrier op;
-  assoc   : is_assoc carrier op;
-
-  ein : e ∈ carrier;
-  lid : l_ident carrier op e;
-
-  invin : closed_u carrier inv;
-  linv  : l_inv carrier op e inv
-}.
-End Defn.
-
-
-Section Basics.
-Context {C : Type}.
-Variable (G: @t C).
-Variable (a b c id: C).
-Hypothesis Ga : a ∈ G.(carrier).
-Hypothesis Gb : b ∈ G.(carrier).
-Hypothesis Gc : c ∈ G.(carrier).
-Hypothesis Gi : id ∈ G.(carrier).
-Local Notation e := (e G).
-Local Notation op := (op G).
-Local Notation assoc := (assoc G).
-Local Infix "@" := op (at level 20, left associativity).
-Local Notation "a '''" := (inv G a) (at level 2, left associativity).
-
-Hint Resolve (closure G) ein (invin G)  : lgrp.
-Hint Rewrite @assoc : lgrp.
-
-Theorem left_can : forall z x y, 
-  z ∈ G.(carrier) ->
-  x ∈ G.(carrier) ->
-  y ∈ G.(carrier) ->
-  z @ x = z @ y -> x = y.
-Proof with auto with lgrp.
-  intros * Gz Gx Gy H.
-  rewrite <- G.(lid), <- (G.(lid) y)...
-  rewrite <- (G.(linv) z)...
-  repeat rewrite assoc...
-  rewrite H...
-Qed.
-
-
-Theorem lft_id_is_id: r_ident G.(carrier) op e.
-Proof with auto with lgrp.
-  intros ? **.
-  apply (left_can (x '))...
-  rewrite <- assoc...
-  repeat rewrite linv...
-  rewrite lid...
-Qed.
-
-
-Theorem lft_inv_is_inv: r_inv G.(carrier) op e G.(inv).
-Proof with auto with lgrp.
-  intros ? **. apply (left_can (x '))...
-  rewrite <- assoc, G.(linv),
-          G.(lid), lft_id_is_id...
-Qed.
-
-End Basics.
-End lGroups.
-
-
-
-Section Defn.
-Context {C : Type}.
-
 
 Record Group : Type := mkgroup {
   carrier  : Ensemble C;
@@ -134,7 +58,15 @@ Definition is_Group (carrier : Ensemble C) (op: C -> C -> C)
   l_inv carrier op e inv /\
   r_inv carrier op e inv.
 
-Corollary G_is_grp : forall G : Group,
+Corollary is_Group__is_grp : forall a b c d (H: is_Group a b c d), Group.
+Proof with auto.
+  intros **. unfold is_Group in H.
+  decompose [and] H.
+  apply (mkgroup a b c d)...
+Defined.
+
+
+Corollary is_grp__is_Group : forall G : Group,
  is_Group G.(carrier) G.(op) G.(e) G.(inv).
 Proof.
   intros. decompose [and] (group_facts G).
@@ -155,44 +87,66 @@ Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
 
 
 Section Subgroups.
-Variable (H N G: Group) (h n g g1 g2: C).
-Hypothesis Hh: h ∈ H.
-Hypothesis Nn: n ∈ N.
-Hypothesis Gg: g ∈ G.
-Hypothesis G1: g1 ∈ G.
-Hypothesis G2: g2 ∈ G.
-Local Infix "@" := G.(op) (at level 20, left associativity).
-Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+  Variable (H G: Group).
 
+  Definition subgroup_prop : Prop :=
+      H ⊆ G /\ H.(op) = G.(op).
 
-Inductive subgroup_ind : Prop :=
-  Definition_of_sgrp :
-    H ⊆ G -> H.(op) = G.(op) -> subgroup_ind.
+  Definition is_Subgroup_of (H : Ensemble C):=
+    H ⊆ G /\
+    closed_b H G.(op) /\
+    G.(e) ∈ H /\
+    closed_u H G.(inv).
 
-Definition subgroup_prop : Prop :=
-    H ⊆ G /\ H.(op) = G.(op).
-
-Definition is_Subgroup_of (carrier : Ensemble C):=
-  carrier ⊆ G /\
-  closed_b carrier G.(op) /\
-  is_assoc carrier G.(op) /\
-  G.(e) ∈ carrier /\
-  l_ident carrier G.(op) G.(e) /\
-  r_ident carrier G.(op) G.(e) /\
-  closed_u carrier G.(inv) /\
-  l_inv carrier G.(op) G.(e) G.(inv) /\
-  r_inv carrier G.(op) G.(e) G.(inv).
-
+  (* Other subgroup facts in [Basics.v] *)
+End Subgroups.
 
 Local Notation subgroup := subgroup_prop.
 
-Definition normal_subgroup : Prop :=
-  subgroup /\
-  n @ g @ (N.(inv) n) ∈ N.
+Section Normal_subgroups.
+  Variable (N G: Group) (n g g1 g2: C).
+  Hypothesis Nn: n ∈ N.
+  Hypothesis Gg: g ∈ G.
+  Hypothesis G1: g1 ∈ G.
+  Hypothesis G2: g2 ∈ G.
+  Local Infix "@" := G.(op) (at level 20, left associativity).
+  Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
-Definition normal_comm : Prop :=
-  g1 @ g2 ∈ N <-> g2 @ g1 ∈ N.
+  Definition normal_subgroup : Prop :=
+    subgroup N G /\
+    forall n g, n ∈ N -> g ∈ G ->
+    n @ g @ (N.(inv) n) ∈ N.
 
+  Definition normal_comm : Prop :=
+    subgroup N G /\
+    forall g1 g2, g1 ∈ G -> g2 ∈ G ->
+    g1 @ g2 ∈ N <-> g2 @ g1 ∈ N.
+
+  Definition is_Normal_subgroup_of (carrier : Ensemble C):=
+    carrier ⊆ G /\
+    closed_b carrier G.(op) /\
+    G.(e) ∈ carrier /\
+    closed_u carrier G.(inv) /\
+    ( forall n, n @ g @ n ' ∈ carrier \/
+      g1 @ g2 ∈ carrier <-> g2 @ g1 ∈ carrier).
+
+End Normal_subgroups.
+
+Section nsg_fact.
+  Variable (N G: Group).
+  Local Infix "@" := G.(op) (at level 20, left associativity).
+
+  Corollary nsg_defns_same : normal_subgroup N G  <-> normal_comm N G.
+  Proof with auto.
+    split.
+    - intros ? ? **. split; intro. unfold normal_subgroup in H.
+
+  Qed.
+End nsg_fact.
+
+
+
+Section Cyclic_subgroups.
 Export BinPos.Pos.
 Close Scope positive_scope.
 Definition rep_aux (id x: C) := iter (fun y => x @ y) id.
@@ -287,7 +241,6 @@ Infix "@" := G.(op) (at level 20, left associativity).
 Infix "+" := H.(op) (at level 50, left associativity).
 
 
-(* Require Import FinFun. *)
 Definition Bijective (f: @fn C D) :=
   ∃ f' : @fn D C, @structure_preserving D C H G f' /\
     (∀ x, x ∈ G -> (f' (f x) = x)) /\
@@ -304,10 +257,6 @@ Definition Surjective (f: @fn C D) :=
 
 
 
-
-
-
-(* Require Import FinFun. *)
 Definition isomorphism :=
   {f: @fn C D | @structure_preserving C D G H f & Bijective f}.
 Definition iso2homo (h: isomorphism): homomorphism G H :=
@@ -333,8 +282,7 @@ Qed.
 Lemma Bi2I_S : ∀ {f: homomorphism G H}, Bijective f ->
                   Injective f /\ Surjective f.
 Proof with auto.
-  intros * [f' [[g2g sp] [f'f ff']]].
-  split.
+  intros * [f' [[g2g sp] [f'f ff']]]. split.
   - intros x y Gx Gy fxfy.
     rewrite <- f'f, <- (f'f x), fxfy...
   - intros y Hy. exists (f' y); split...
@@ -367,6 +315,21 @@ Proof with auto.
 Qed.
 
 
+Definition is_Isomorphism (f:@fn C D): Prop :=
+  @structure_preserving C D G H f /\ Bijective f.
+
+Definition is_Isomorphism_is_iso : forall {f}
+  (H: is_Isomorphism f), isomorphism.
+Proof with auto.
+  intros * [sp bi].
+  refine (exist2 _ _ _ sp bi).
+Qed.
+
+
+Definition is_Isomorphic : Prop := exists (f:isomorphism), True.
+
+
+
 
 
 
@@ -384,14 +347,15 @@ Arguments rep [_ _].
 Arguments Iso2I_S [_ _ _ _].
 
 Ltac iso2is iso := destruct (Iso2I_S iso) as [?inj ?sur].
-Ltac b2is bi := destruct (Bi2I_S bi) as [?inj ?sur].
+Ltac b2is  bi := destruct (Bi2I_S bi) as [?inj ?sur].
 Ltac b2is' bi := destruct (Bi2I_S bi) as [inj sur];
                  unfold Injective in inj; unfold Surjective in sur;
                  simpl in *.
 Ltac dhomo f := destruct f as [bbob [?ghomo ?sp]];
                 rename f into f_homo; rename bbob into f;
                 simpl in *.
-Ltac diso  f := destruct f as [bbob [?ghomo ?sp]
+Ltac diso  f := iso2is f;
+                destruct f as [bbob [?ghomo ?sp]
                                [f' [[?ghomo' ?sp'] [f'f ff']]]];
                 rename f into f_iso; rename bbob into f;
                 simpl in *.

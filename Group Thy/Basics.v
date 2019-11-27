@@ -274,8 +274,8 @@ Proof with atg.
   destruct (lunique_sol G H.(e) H.(e))
     as [eG [[GeG X] uniG]]...
   rewrite <- (uniG G.(e)) by (split; atg).
-  rewrite <- (uniG H.(e)) by (
-    split;[|rewrite <- Sm_o, H.(lid)]; atg).
+  rewrite <- (uniG H.(e)) by
+    (split;[|rewrite <- Sm_o, H.(lid)]; atg).
   auto.
 Qed.
 
@@ -300,6 +300,16 @@ Proof with atg.
   auto.
 Qed.
 
+Theorem is_Subgroup_of_is_grp : forall carr,
+is_Subgroup_of G carr -> is_Group carr G.(op) G.(e) G.(inv).
+Proof with atg.
+  intros * [? [? []]]. is_grp.
+  - intros x y z xin yin zin.
+    apply assoc...
+Qed. 
+  
+
+
 Theorem trivial_sg : is_Subgroup_of G (fun x => x = G.(e)).
 Proof with atg.
   is_sgrp...
@@ -312,6 +322,13 @@ Proof with atg.
   - intros x ->. rewrite e_own_inv...
   - intros x ->...
   - intros x ->...
+Qed.
+
+Theorem improper_sg : is_Subgroup_of G (fun x => G.(carrier) x).
+Proof with atg.
+  is_sgrp...
+  - intros x y z Gx Gy Gz.
+    apply assoc...
 Qed.
 
 
@@ -330,6 +347,9 @@ Local Hint Rewrite @assoc : grp.
 Variable (a b c : C).
 Local Infix "@" := G.(op) (at level 20, left associativity).
 Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+
+
+
 
 Lemma intersection_preserves_sgness : K ≤ G -> H ≤ G ->
   is_Subgroup_of G (fun x => x ∈ H /\ x ∈ K).
@@ -542,7 +562,7 @@ Variable (f: isomorphism G H).
 
 Theorem iso_preserves_id : ((f: fn) G.(e)) = H.(e).
 Proof with atg.
-  iso2is f. diso f.
+  diso f.
   destruct (sur H.(e) H.(ein)) as [eG [GeG X]].
   pose proof (sp G.(e) eG) as Z.
   rewrite G.(lid), X, H.(rid)in Z...
@@ -550,12 +570,21 @@ Qed.
 
 Theorem iso_preserves_inv : (f:fn) (g ') = ((f:fn) g) !.
 Proof with atg.
-  iso2is f. diso f. apply (left_can H (f g))...
+  diso f. apply (left_can H (f g))...
   rewrite <- sp, rinv, rinv...
   destruct (sur H.(e) H.(ein)) as [eG [GeG X]].
   pose proof (sp G.(e) eG) as Z.
   rewrite G.(lid), X, H.(rid) in Z...
 Qed.
+
+Theorem conjugate_g__is_iso : is_Isomorphism G G (fun x => x @ g @ x ').
+Proof with atg.
+  diso f. repeat split.
+  - intros x Gx. apply closure...
+  -
+  
+Qed.
+
 
 
 

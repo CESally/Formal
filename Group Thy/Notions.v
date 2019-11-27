@@ -15,6 +15,7 @@ Context {C : Type}.
 Variable D  : Ensemble C.
 Variable op : C -> C -> C.
 Variable e  : C.
+Variable inv: C -> C.
 Local Infix "@" := op (at level 20, left associativity).
 
 Definition is_assoc : Prop := ∀ x y z : C,
@@ -34,25 +35,23 @@ Definition r_ident : Prop := ∀ x, e ∈ D -> x ∈ D -> x @ e = x.
 Definition   ident : Prop := ∀ x, e ∈ D -> x ∈ D ->
                              e @ x = x /\ x @ e = x.
 
+(* The inverse of an element, x (wrt some element e), given by the
+   function inv, when multiplied with x itself, returns e. *)
+Definition l_inv : Prop := ∀ x, x ∈ D -> inv x @ x = e.
+Definition r_inv : Prop := ∀ x, x ∈ D -> x @ inv x = e.
+
+Definition closed_u : Prop := ∀ x, x ∈ D ->              (inv x) ∈ D.
+Definition closed_b : Prop := ∀ x y, x ∈ D -> y ∈ D ->  (x @ y) ∈ D.
+
 (* An element of the carrier if of order 2 (wrt some element e) if, when
    multiplied with itself, it returns e *)
 Definition order2 (x: C) : Prop :=
   x ∈ D /\ x @ x = e.
 
-(* The inverse of an element, x (wrt some element e), given by the
-   function inv, when multiplied with x itself, returns e. *)
-Definition l_inv (inv:C -> C) : Prop := ∀ x, x ∈ D -> inv x @ x = e.
-Definition r_inv (inv:C -> C) : Prop := ∀ x, x ∈ D -> x @ inv x = e.
-
-Definition closed_u (inv: C -> C) : Prop := ∀ x, x ∈ D ->
-  (inv x) ∈ D.
-Definition closed_b : Prop := ∀ x y, x ∈ D -> y ∈ D ->
-  (x @ y) ∈ D.
-
 Definition is_l_inv_of (x' x e:C) : Prop := x' @ x = e.
 Definition is_r_inv_of (x' x e:C) : Prop := x @ x' = e.
 
-Definition conjugate (h g: C) (inv: C -> C) : C := h @ g @ (inv h).
+Definition conjugate (h g: C) : C := h @ g @ (inv h).
 
 End top.
 
