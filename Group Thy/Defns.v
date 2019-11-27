@@ -243,37 +243,27 @@ Definition fn := C -> D.
 (* carrier to carrier *)
 Definition c2c (f:fn) := ∀ x (Gx: x ∈ G), f x ∈ H.
 Definition structure_preserving (f: fn) := c2c f /\
-  ∀ a b, a ∈ G -> b ∈ G -> (f:fn) (a @ b) = (f:fn) a + (f:fn) b.
+  ∀ a b, (f:fn) (a @ b) = (f:fn) a + (f:fn) b.
 Definition homomorphism :=
   {f: fn |  structure_preserving f}.
 Definition homo2fn (h: homomorphism) : fn := proj1_sig h.
 Coercion   homo2fn : homomorphism >-> fn.
 Definition homosp (h: homomorphism) := proj2_sig h.
 
-Definition is_Homomorphism (f:fn) : Prop :=
-  structure_preserving f.
-
-Definition mkhomo {f:fn} (evidence: is_Homomorphism f) : homomorphism.
-Proof. exact (exist _ f evidence). Defined.
-
-
 Lemma homo_img_in : ∀ (f: homomorphism) x,
-  x ∈ G.(carrier) -> (f:fn) x ∈ H.(carrier).
+  x ∈ G -> (f:fn) x ∈ H.
 Proof.
   intros f. destruct f as [f [ghomo sp]].
   exact ghomo.
 Qed.
 
-Lemma homo_img_in' : ∀ (f: fn) x, c2c f ->
-  x ∈ G.(carrier) -> (f:fn) x ∈ H.(carrier).
+Lemma homo_img_in' : ∀ f x, c2c f ->
+  x ∈ G -> f x ∈ H.
 Proof. intros **. apply H0; auto. Qed.
 
 Variable (f: homomorphism).
 Definition kernel : Ensemble C := fun g => (f: fn) g = H.(e).
 Definition image  : Ensemble D := fun h => forall g, (f: fn) g = h.
-
-
-
 
 
 
@@ -283,7 +273,7 @@ End top.
 
 Arguments structure_preserving [_ _ _ _].
 
-Section bijection.
+Section inverse.
 Context {C D: Type}.
 Variable (G: @Group C) (H: @Group D).
 Variable (g g1 g2: C) (h h1 h2: D).
@@ -298,99 +288,119 @@ Infix "+" := H.(op) (at level 50, left associativity).
 
 
 (* Require Import FinFun. *)
-Definition Bijective (f: homomorphism G H) :=
-  ∃ f' : (homomorphism H G),
-    (∀ x, x ∈ G -> (f':fn) ((f :fn) x) = x) /\
-    (∀ y, y ∈ H -> (f :fn) ((f':fn) y) = y).
+Definition Bijective (f: @fn C D) :=
+  ∃ f' : @fn D C, @structure_preserving D C H G f' /\
+    (∀ x, x ∈ G -> (f' (f x) = x)) /\
+    (∀ y, y ∈ H -> (f (f' y) = y)).
 
-Definition Injective (f: homomorphism G H) :=
+Definition Injective (f: @fn C D) :=
   ∀ x y, x ∈ G -> y ∈ G ->
-  (f:fn) x = (f:fn) y -> x = y.
+  f x = f y -> x = y.
 
-Definition Surjective (f: homomorphism G H) :=
-  ∀ y, y ∈ H.(carrier) -> ∃ x, x ∈ G.(carrier) /\ 
-  (f:fn) x = y.
+Definition Surjective (f: @fn C D) :=
+  ∀ y, y ∈ H -> ∃ x, x ∈ G /\
+  f x = y.
+
+
+
+
 
 
 
 (* Require Import FinFun. *)
 Definition isomorphism :=
-  {f: homomorphism G H | Bijective f}.
-Definition iso2homo (h: isomorphism): homomorphism G H := proj1_sig h.
+  {f: @fn C D | @structure_preserving C D G H f & Bijective f}.
+Definition iso2homo (h: isomorphism): homomorphism G H :=
+  exist _ (proj1_sig (sig_of_sig2 h)) (proj2_sig (sig_of_sig2 h)).
 Coercion   iso2homo : isomorphism >-> homomorphism.
-Definition iso2fn (h: isomorphism) : fn := (proj1_sig (proj1_sig h)).
+Definition iso2fn (h: isomorphism) : fn := (proj1_sig (sig_of_sig2 h)).
 Coercion   iso2fn : isomorphism >-> fn.
-Definition isosp (h: isomorphism) := (proj2_sig (proj1_sig h)).
-Definition isob (h: isomorphism) := proj2_sig h.
-
-Definition is_Isomorphism (f:@fn C D) : Prop :=
-  exists (evidence: is_Homomorphism G H f),
-Bijective (exist _ f evidence).
-
-Definition is_Isomorphic : Prop :=
-  exists (f:isomorphism), True.
-
-Definition mkiso {f:fn} (evidence1: is_Homomorphism G H f)
-  (evidence2: is_Isomorphism f ) : isomorphism.
-Proof.
-  refine (exist _ (mkhomo G H evidence1) _).
-
-  destruct evidence2. unfold Bijective.
-pose (mkhomo G H evidence1).
-exists h0.
-unfold is_Isomorphism in evidence2.
-admit.
-Admitted.
-
-
+Definition isosp (h: isomorphism) := (proj2_sig (sig_of_sig2 h)).
+Definition isob (h: isomorphism) := proj3_sig h.
 
 Lemma Bi2I : ∀ {f: homomorphism G H}, Bijective f -> Injective f.
 Proof with auto.
-  intros * [f' [f'f ff']] x y Gx Gy fxfy.
+  intros * [f' [_ [f'f ff']]] x y Gx Gy fxfy.
   rewrite <- f'f, <- (f'f x), fxfy...
 Qed.
 
 Lemma Bi2S : ∀ {f: homomorphism G H}, Bijective f -> Surjective f.
-Proof with auto.
-  intros * [f' [f'f ff']] y Hy.
-  exists ((f':fn) y). split...
-  apply homo_img_in...
+Proof with eauto.
+  intros * [f' [[g2g sp] [f'f ff']]] y Hy.
+  exists (f' y); split...
 Qed.
 
 Lemma Bi2I_S : ∀ {f: homomorphism G H}, Bijective f ->
                   Injective f /\ Surjective f.
 Proof with auto.
-  intros * [f' [f'f ff']].
+  intros * [f' [[g2g sp] [f'f ff']]].
   split.
-  - intros x y Gx Gy fxfy. rewrite <- f'f, <- (f'f x), fxfy...
-  - intros y Hy. exists ((f':fn) y). split... apply homo_img_in...
+  - intros x y Gx Gy fxfy.
+    rewrite <- f'f, <- (f'f x), fxfy...
+  - intros y Hy. exists (f' y); split...
 Qed.
+
+
+Lemma Iso2I : ∀ (f: isomorphism), Injective f.
+Proof with auto.
+  destruct f
+    as [f [ghomo sp] [f' [[ghomo' sp'] [f'f ff']]]]
+  ; simpl. intros x y Gx Gy fxfy.
+  rewrite <- (f'f x), fxfy...
+Qed.
+
+Lemma Iso2S : ∀ (f: isomorphism), Surjective f.
+Proof with auto.
+  destruct f
+    as [f [ghomo sp] [f' [[ghomo' sp'] [f'f ff']]]]
+  ; simpl. intros y Hy. exists (f' y); split...
+Qed.
+
+Lemma Iso2I_S : ∀ (f: isomorphism),
+  Injective f /\ Surjective f.
+Proof with auto.
+  destruct f
+    as [f [ghomo sp] [f' [[ghomo' sp'] [f'f ff']]]]
+  ; simpl; split.
+  - intros x y Gx Gy fxfy. rewrite <- (f'f x), fxfy...
+  - intros y Hy. exists (f' y); split...
+Qed.
+
+
+
+
+
 
 (* Lemma I_S2Bi : ∀ {f: homomorphism G H},
   Injective f -> Surjective f -> Bijective f.
 Proof with auto.
 Admitted. *)
 
-End bijection.
+End inverse.
 End Homomorphisms.
 
 Arguments Bi2I_S [_ _ _ _ _].
 Arguments rep [_ _].
+Arguments Iso2I_S [_ _ _ _].
 
-
+Ltac iso2is iso := destruct (Iso2I_S iso) as [?inj ?sur].
 Ltac b2is bi := destruct (Bi2I_S bi) as [?inj ?sur].
 Ltac b2is' bi := destruct (Bi2I_S bi) as [inj sur];
                  unfold Injective in inj; unfold Surjective in sur;
                  simpl in *.
-Ltac dhomo f := destruct f as [bbob [?ghomo ?sp]]; simpl in *;
-                clear f; rename bbob into f.
-Ltac diso  f := destruct f as [[bbob [?ghomo ?sp]] bi];
-                b2is' bi; destruct bi as [f' [f'f ff']];
-                clear f; rename bbob into f; simpl in *.
+Ltac dhomo f := destruct f as [bbob [?ghomo ?sp]];
+                rename f into f_homo; rename bbob into f;
+                simpl in *.
+Ltac diso  f := destruct f as [bbob [?ghomo ?sp]
+                               [f' [[?ghomo' ?sp'] [f'f ff']]]];
+                rename f into f_iso; rename bbob into f;
+                simpl in *.
+
 
 Ltac is_grp  := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
 Ltac is_sgrp := split;[|split;[|split;[|split;[|split;[|split;[|split;
                 [|split]]]]]]].
+
 
 
 

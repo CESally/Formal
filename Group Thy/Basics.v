@@ -1,4 +1,3 @@
-(* Author : CESally *)
 Require Import Defns.
 Import Pos.
 
@@ -508,11 +507,9 @@ Context {C D : Type}.
 Context {G: @Group C} {H: @Group D}.
 Variable (g g1 g2: C) (h h1 h2: D).
 Local Hint Resolve
-  (closure G) (ein G) (lid G) (rid G)
-  (invin G) (linv G) (rinv G)
-  (closure H) (ein H) (lid H) (rid H)
-  (invin H) (linv H) (rinv H)
-: grp.
+(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
+(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+              : grp.
 
 (* Local Notation carrier := (carrier G).
 Local Notation op := (op G).
@@ -527,17 +524,17 @@ Local Notation r_ident := (r_ident op). *)
 Local Notation idempotent := (idempotent carrier op).
 Local Notation order2 := (order2 carrier op e).
 
-Hypothesis Gg : g  ∈ G.(carrier).
-Hypothesis G1 : g1 ∈ G.(carrier).
-Hypothesis G2 : g2 ∈ G.(carrier).
-Hypothesis Hh : h  ∈ H.(carrier).
-Hypothesis H1 : h2 ∈ H.(carrier).
-Hypothesis H2 : h1 ∈ H.(carrier).
+Hypothesis Gg : g  ∈ G.
+Hypothesis G1 : g1 ∈ G.
+Hypothesis G2 : g2 ∈ G.
+Hypothesis Hh : h  ∈ H.
+Hypothesis H1 : h2 ∈ H.
+Hypothesis H2 : h1 ∈ H.
 
 Local Infix "@" := G.(op) (at level 20, left associativity).
 Local Infix "+" := H.(op) (at level 50, left associativity).
-Local Notation "a '''" := (inv G a) (at level 2, left associativity).
-Local Notation "a '!'" := (inv H a) (at level 2, left associativity).
+Local Notation "a '''" := (inv G a) (at level 12, left associativity).
+Local Notation "a '!'" := (inv H a) (at level 12, left associativity).
 
 Open Scope group_scope.
 
@@ -545,62 +542,21 @@ Variable (f: isomorphism G H).
 
 Theorem iso_preserves_id : ((f: fn) G.(e)) = H.(e).
 Proof with atg.
-  diso f. destruct (sur H.(e) H.(ein)) as [eG [GeG X]].
-  pose proof (sp G.(e) eG) as Z. rewrite G.(lid) in Z...
-  rewrite X in Z at 2. rewrite H.(rid) in Z...
-  apply inj in Z... rewrite <- Z...
+  iso2is f. diso f.
+  destruct (sur H.(e) H.(ein)) as [eG [GeG X]].
+  pose proof (sp G.(e) eG) as Z.
+  rewrite G.(lid), X, H.(rid)in Z...
 Qed.
 
-Theorem iso_preserves_inv : (f:fn) g ' = ((f:fn) g) !.
+Theorem iso_preserves_inv : (f:fn) (g ') = ((f:fn) g) !.
 Proof with atg.
-  diso f. apply (left_can H (f g))...
+  iso2is f. diso f. apply (left_can H (f g))...
   rewrite <- sp, rinv, rinv...
   destruct (sur H.(e) H.(ein)) as [eG [GeG X]].
-  pose proof (sp G.(e) eG) as Z. rewrite G.(lid) in Z...
-  rewrite X in Z at 2. rewrite H.(rid) in Z...
-  apply inj in Z... rewrite <- Z...
+  pose proof (sp G.(e) eG) as Z.
+  rewrite G.(lid), X, H.(rid) in Z...
 Qed.
 
-Theorem g_conjugate_iso : is_Isomorphism G G (fun x => g @ x @ g ').
-Proof with atg.
-    assert (is_Homomorphism G G (λ x : C, g @ x @ g ')). {
-      split.
-      - intros x Gx. apply closure...
-      - intros a b Ga Gb.
-        rewrite (assoc G (g@a)), <- (assoc G (g ')),
-                <- (assoc G (g ')), linv, lid...
-        repeat rewrite assoc...
-    }
-  exists H0.
-    assert (is_Homomorphism G G (fun x => g ' @ x @ g)). {
-      split. - intros x Gx. apply closure...
-      - intros **. rewrite (assoc G (g '@a)),
-                   <- (assoc G (g)),
-                   <- (assoc G (g)), rinv, lid...
-        repeat rewrite assoc...
-    }
-  exists (mkhomo _ _ H3). split.
-  - intros x Gx. simpl.
-    repeat rewrite assoc...
-    rewrite linv, rid, <- assoc, linv...
-  - intros x Gx. simpl.
-    repeat rewrite assoc...
-    rewrite rinv, rid, <- assoc, rinv...  
-Qed.
-
-
-Theorem bill : is_Isomorphic G G.
-Proof with atg.
-  assert (is_Homomorphism G G (fun x => x)).
-  split... intros x... 
-  assert (is_Isomorphism G G (fun x => x)). {
-  exists H0.
-  unfold Bijective. exists (mkhomo _ _ H0).
-  split; intros ? ?... }
-  
-  exists (mkiso _ _ H3).
-  
-  unfold is_Isomorphism.
 
 
 End twoG.
