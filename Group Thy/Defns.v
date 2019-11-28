@@ -2,13 +2,6 @@
 Require Export Notions BinInt.
 Close Scope Z_scope.
 Close Scope N_scope.
-
-
-
-Reserved Notation "x @ y" (at level 20, left associativity).
-
-(* Declare Scope Groups. *)
-
 Open Scope group_scope.
 
 Section Defn.
@@ -47,8 +40,10 @@ Proof.
 Qed.
 
 
-Definition is_Group (carrier : Ensemble C) (op: C -> C -> C)
-                   (e: C) (inv: C -> C):=
+Definition is_Group (carrier : Ensemble C)
+                    (op: C -> C -> C)
+                    (e: C)
+                    (inv: C -> C):=
   closed_b carrier op /\
   is_assoc carrier op /\
   e ∈ carrier /\
@@ -58,7 +53,8 @@ Definition is_Group (carrier : Ensemble C) (op: C -> C -> C)
   l_inv carrier op e inv /\
   r_inv carrier op e inv.
 
-Corollary is_Group__is_grp : forall a b c d (H: is_Group a b c d), Group.
+Corollary is_Group__is_grp : ∀ a b c d
+  (H: is_Group a b c d), Group.
 Proof with auto.
   intros **. unfold is_Group in H.
   decompose [and] H.
@@ -84,7 +80,9 @@ Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
   ~ l_inv carrier op e inv \/
   ~ r_inv carrier op e inv.
 
-
+Section group_basics.
+Local Infix "@" := op (at level 20, left associativity).
+End group_basics.
 
 Section Subgroups.
   Variable (H G: Group).

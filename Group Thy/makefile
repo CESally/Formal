@@ -1,5 +1,14 @@
 COQC =/mnt/c/Coq/bin/coqc.exe
 
+basics:  defns  
+	$(COQC) Basics.v
+
+defns:  notions
+	$(COQC) Defns.v
+
+notions:
+	$(COQC) Notions.v
+
 
 
 %.vo: %.v
