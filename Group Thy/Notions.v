@@ -7,6 +7,13 @@ Arguments In [_].
 Arguments Included [_].
 Notation "e ∈ S" := (In S e) (at level 20) : group_scope.
 Notation "A ⊆ B" := (Included A B) (at level 20) : group_scope.
+
+Create HintDb grp.
+Ltac atg  :=  auto with grp.
+Ltac eatg := eauto with grp.
+Hint Unfold In Included.
+
+
 Open Scope group_scope.
 
 

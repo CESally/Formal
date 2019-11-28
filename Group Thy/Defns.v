@@ -4,7 +4,10 @@ Close Scope Z_scope.
 Close Scope N_scope.
 Open Scope group_scope.
 
-Section Defn.
+
+
+
+Section Groups.
 Context {C : Type}.
 
 Record Group : Type := mkgroup {
@@ -26,7 +29,7 @@ Record Group : Type := mkgroup {
 
 Coercion carrier: Group >-> Ensemble.
 
-Remark group_facts : forall G: Group,
+Remark group_axioms : forall G: Group,
   closed_b G.(carrier) G.(op) /\
   is_assoc G.(carrier) G.(op) /\
   G.(e) ∈ G.(carrier) /\
@@ -65,7 +68,7 @@ Defined.
 Corollary is_grp__is_Group : forall G : Group,
  is_Group G.(carrier) G.(op) G.(e) G.(inv).
 Proof.
-  intros. decompose [and] (group_facts G).
+  intros. decompose [and] (group_axioms G).
   repeat split; auto.
 Qed.
 
@@ -80,14 +83,144 @@ Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
   ~ l_inv carrier op e inv \/
   ~ r_inv carrier op e inv.
 
-Section group_basics.
+End Groups.
+
+Ltac is_grp  := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
+
+
+Section basics_facts.
+Context {C: Type}.
+Variable (G: @Group C).
+Local Hint Resolve
+(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+: grp.
+Local Notation e := (e G).
+Local Notation op := (op G).
+Local Notation assoc := (assoc G).
+Local Notation lid := (lid G).
+Local Notation rid := (rid G).
+Local Notation linv := (linv G).
+Local Notation rinv := (rinv G).
+Local Notation ident := (ident G op).
+Local Notation l_ident := (l_ident G op).
+Local Notation r_ident := (r_ident G op).
 Local Infix "@" := op (at level 20, left associativity).
-End group_basics.
+Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+
+Theorem left_can : forall z {x y},
+  x ∈ G -> y ∈ G -> z ∈ G ->
+  z @ x = z @ y -> x = y.
+Proof with atg.
+  intros * Gz Gx Gy H.
+  rewrite <- lid, <- (lid y)...
+  rewrite <- (linv z)...
+  repeat rewrite assoc...
+  rewrite H...
+Qed.
+
+Theorem right_can : forall z {x y},
+  x ∈ G -> y ∈ G -> z ∈ G ->
+  x @ z = y @ z -> x = y.
+Proof with atg.
+  intros * Gz Gx Gy H.
+  rewrite <- rid, <- (rid y),
+          <- (rinv z)...
+  repeat rewrite <- assoc...
+  rewrite H...
+Qed.
+
+Theorem l_gives_r_id : ∀ x,
+  l_ident x -> r_ident x.
+Proof with atg.
+  intros x xlid y Gx Gy...
+  apply (right_can y)...
+  rewrite assoc, xlid...
+Qed.
+
+Theorem r_gives_l_id : ∀ x,
+  r_ident x -> l_ident x.
+Proof with atg.
+  intros x xrid y Gx Gy...
+  apply (left_can y)...
+  rewrite <- assoc, xrid...
+Qed.
+
+Theorem e_unique :∀ id, id ∈ G ->
+  ident id -> id = e.
+Proof with atg.
+  intros **. destruct (H0 e)...
+  apply (left_can e)...
+  symmetry; rewrite H2...
+Qed.
+
+Theorem inv_unique : ∀ x x', x ∈ G -> x' ∈ G ->
+  x' @ x  = e ->
+  x  @ x' = e ->
+  x' = x '.
+Proof with atg.
+  intros **. apply (left_can x)...
+  symmetry; rewrite H2...
+Qed.
+
+Theorem e_own_inv : e ' = e.
+Proof with atg.
+  apply (left_can e)...
+  rewrite rinv, lid...
+Qed.
+
+Theorem xii__x : forall x, x ∈ G ->
+  x ' ' = x.
+Proof with atg.
+  intros **. apply (left_can (x '))...
+  rewrite rinv, linv...
+Qed.
+
+Theorem inv_of_op : ∀ x y
+  (Gx: x ∈ G)
+  (Gy: y ∈ G),
+  (x @ y) ' = y ' @ x '.
+Proof with atg.
+  intros **.
+  apply (left_can (x @ y))...
+  symmetry; rewrite rinv,
+                    <- assoc,
+                    (assoc x),
+                    rinv,
+                    rid...
+Qed.
+
+Theorem lunique_sol : ∀ g1 g2
+  (G1: g1 ∈ G) (G2: g2 ∈ G),
+  exists! x, x ∈ G /\
+  x @ g1 = g2.
+Proof with atg.
+  intros **. exists (g2 @ g1 '); split.
+  - split... rewrite assoc, linv...
+  - intros ? []. rewrite <- H0, assoc, rinv...
+Qed.
+
+Theorem runique_sol : ∀ g1 g2
+  (G1: g1 ∈ G) (G2: g2 ∈ G),
+  exists! x, x ∈ G /\
+  g1 @ x = g2.
+Proof with atg.
+  intros **. exists (g1 ' @ g2); split.
+  - rewrite <- assoc, rinv...
+  - intros ? []. rewrite <- H0, <- assoc, linv...
+Qed.
+
+End basics_facts.
+
+
+
+
+
 
 Section Subgroups.
-  Variable (H G: Group).
+  Context {C : Type}.
+  Variable (H G: @Group C).
 
-  Definition subgroup_prop : Prop :=
+  Definition subgroup : Prop :=
       H ⊆ G /\ H.(op) = G.(op).
 
   Definition is_Subgroup_of (H : Ensemble C):=
@@ -95,11 +228,109 @@ Section Subgroups.
     closed_b H G.(op) /\
     G.(e) ∈ H /\
     closed_u H G.(inv).
-
-  (* Other subgroup facts in [Basics.v] *)
 End Subgroups.
 
-Local Notation subgroup := subgroup_prop.
+Notation "H ≤ G" := (subgroup H G) : group_scope.
+Ltac is_sgrp := split;[|split;[|split]].
+
+Section subgroup_facts.
+Context {C : Type}.
+Context {K H G: @ Group C}.
+Local Hint Resolve
+(closure K) (ein K) (lid K) (rid K) (invin K) (linv K) (rinv K)
+(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
+(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+              : grp.
+
+
+(* Local Hint Rewrite @assoc : grp. *)
+Local Infix "@" := (op G) (at level 20, left associativity).
+Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+
+
+Theorem subgroup_has_same_e : H ≤ G ->
+  H.(e) = G.(e).
+Proof with atg.
+  intros [HiG Sm_o].
+  destruct (lunique_sol G H.(e) H.(e))
+    as [eG [[GeG X] uniG]]...
+  rewrite <- (uniG G.(e)) by (split; atg).
+  rewrite <- (uniG H.(e)) by
+    (split;[|rewrite <- Sm_o, H.(lid)]; atg).
+  auto.
+Qed.
+
+Lemma subgroup_contains_e : H ≤ G ->
+  G.(e) ∈ H.
+Proof with atg.
+  intros HsgG.
+  rewrite <- (subgroup_has_same_e HsgG)...
+Qed.
+
+Lemma subgroup_has_same_invs : H ≤ G ->
+  ∀ a, a ∈ H ->
+  H.(inv) a = G.(inv) a.
+Proof with atg.
+  intros HsgG a Ha.
+  pose proof HsgG as [HiG Sm_o].
+  pose proof (subgroup_has_same_e HsgG) as Sm_e.
+  destruct (lunique_sol G a H.(e))
+    as [a' [[GeG X] uniG]]...
+  rewrite <- (uniG (G.(inv) a)) by (split;[|rewrite Sm_e];atg).
+  rewrite <- (uniG (H.(inv) a)) by (split;[|rewrite <- Sm_o];atg).
+  auto.
+Qed.
+
+Theorem is_Subgroup_of_is_grp : forall carr,
+is_Subgroup_of G carr -> is_Group carr G.(op) G.(e) G.(inv).
+Proof with atg.
+  intros * [? [? []]]. is_grp...
+  - intros x y z xin yin zin.
+    apply assoc...
+  - intros x _ xin. rewrite G.(lid)...
+  - intros x _ xin. rewrite G.(rid)...
+  - intros x   xin. rewrite G.(linv)...
+  - intros x   xin. rewrite G.(rinv)...
+Qed.
+
+Corollary  bob :
+H ≤ G <-> is_Subgroup_of G H.(carrier).
+Proof with atg.
+  split; intros.
+  - repeat split; try pose proof H0 as [? ?]...
+    + (* intros x y Hx Hy. *) rewrite <- H2...
+    + rewrite <- subgroup_has_same_e... 
+    + intros x Hx.  rewrite <- subgroup_has_same_invs...
+  - pose proof H0 as [? [? []]]; split...
+    + admit.
+Admitted.
+
+
+
+Theorem trivial_sg : is_Subgroup_of G (λ x, x = G.(e)).
+Proof with atg.
+  is_sgrp...
+  - intros x ->...
+  - intros x y -> ->...
+  - intros x ->. rewrite e_own_inv...
+Qed.
+
+Theorem improper_sg : is_Subgroup_of G (fun x => G.(carrier) x).
+Proof with atg. is_sgrp... Qed.
+
+End subgroup_facts.
+
+
+
+
+
+
+
+
+
+
+
+
 
 Section Normal_subgroups.
   Variable (N G: Group) (n g g1 g2: C).
@@ -359,9 +590,6 @@ Ltac diso  f := iso2is f;
                 simpl in *.
 
 
-Ltac is_grp  := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
-Ltac is_sgrp := split;[|split;[|split;[|split;[|split;[|split;[|split;
-                [|split]]]]]]].
 
 
 
@@ -369,14 +597,7 @@ Ltac is_sgrp := split;[|split;[|split;[|split;[|split;[|split;[|split;
 
 
 
-Create HintDb grp.
+
+
 Hint Resolve homo_img_in : grp.
-Hint Unfold is_assoc l_ident r_ident l_inv r_inv 
-            In Included carrier lid rid linv rinv: grp.
-Local Hint Resolve @closure @ein @lid @rid
-                   @invin @linv @rinv
-                   : grp.
-Local Hint Rewrite @assoc : grp.
-Ltac atg  :=  auto with grp.
-Ltac eatg := eauto with grp.
 Close Scope group_scope.

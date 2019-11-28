@@ -31,73 +31,9 @@ Hypothesis Gc : c ∈ G.
 Local Infix "@" := op (at level 20, left associativity).
 Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
-Theorem left_can : forall z {x y},
-  x ∈ G -> y ∈ G -> z ∈ G ->
-  z @ x = z @ y -> x = y.
-Proof with atg.
-  intros * Gz Gx Gy H.
-  rewrite <- lid, <- (lid y)...
-  rewrite <- (linv z)...
-  repeat rewrite assoc...
-  rewrite H...
-Qed.
 
-Theorem right_can : forall z {x y},
-  x ∈ G -> y ∈ G -> z ∈ G ->
-  x @ z = y @ z -> x = y.
-Proof with atg.
-  intros * Gz Gx Gy H.
-  rewrite <- rid, <- (rid y),
-          <- (rinv z)...
-  repeat rewrite <- assoc...
-  rewrite H...
-Qed.
 
-Theorem l_gives_r_id : ∀ x,
-  l_ident x -> r_ident x.
-Proof with atg.
-  intros x xlid y Gx Gy...
-  apply (right_can y)...
-  rewrite assoc, xlid...
-Qed.
 
-Theorem r_gives_l_id : ∀ x,
-  r_ident x -> l_ident x.
-Proof with atg.
-  intros x xrid y Gx Gy...
-  apply (left_can y)...
-  rewrite <- assoc, xrid...
-Qed.
-
-Theorem e_unique :∀ id, id ∈ G ->
-  ident id -> id = e.
-Proof with atg.
-  intros **. destruct (H0 e)...
-  apply (left_can e)...
-  symmetry; rewrite H2...
-Qed.
-
-Theorem inv_unique : ∀ a', a' ∈ G ->
-  a' @ a = e ->
-  a @ a' = e ->
-  a' = a '.
-Proof with atg.
-  intros **. apply (left_can a)...
-  symmetry; rewrite H1...
-Qed.
-
-Theorem e_own_inv : e ' = e.
-Proof with atg.
-  apply (left_can e)...
-  rewrite rinv, lid...
-Qed.
-
-Theorem xii__x : forall x, x ∈ G ->
-  x ' ' = x.
-Proof with atg.
-  intros **. apply (left_can (x '))...
-  rewrite rinv, linv...
-Qed.
 
 Theorem lunique_sol : ∀ g1 g2
   (G1: g1 ∈ G) (G2: g2 ∈ G),
