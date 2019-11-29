@@ -371,7 +371,7 @@ Section nsg_facts.
 
   Corollary nsg_defns_same : normal_subgroup N G  <-> normal_comm N G.
   Proof with atg.
-    split; intros [NsgG normal]. ef_sg' NsgG.
+    split; intros [NsgG normal]; ef_sg' NsgG.
     - split... pose proof (subgroup_has_same_invs NsgG) as Sm_i.
       intros * G1 G2. split.
       + intros N12.
@@ -416,7 +416,7 @@ Section nsg_facts.
         ,rinv, rid                 (* in H... *)
 
         in H...
-  - split... pose proof (subgroup_has_same_invs NsgG) as Sm_i.
+  - split... intros * Gg Nn.
     
 
   Qed.
