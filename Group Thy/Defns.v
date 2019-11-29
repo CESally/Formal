@@ -320,30 +320,26 @@ Proof with atg. is_sgrp... Qed.
 
 End subgroup_facts.
 
-
-
-
-
-
-
-
-
+Ltac ef_sg' HsgG := pose proof HsgG as [?incl ?Sm_o].
+Ltac ef_sg  HsgG a b := pose proof HsgG as [a b].
 
 
 
 
 Section Normal_subgroups.
-  Variable (N G: Group) (n g g1 g2: C).
+  Context {C : Type}.
+  Variable (N G: @Group C).
+(*   Variable (N G: Group) (n g g1 g2: C).
   Hypothesis Nn: n ∈ N.
   Hypothesis Gg: g ∈ G.
   Hypothesis G1: g1 ∈ G.
-  Hypothesis G2: g2 ∈ G.
+  Hypothesis G2: g2 ∈ G. *)
   Local Infix "@" := G.(op) (at level 20, left associativity).
-  Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+  Local Notation "a '''" := (inv N a) (at level 2, left associativity).
 
   Definition normal_subgroup : Prop :=
     subgroup N G /\
-    forall n g, n ∈ N -> g ∈ G ->
+    forall g n, g ∈ G -> n ∈ N ->
     n @ g @ (N.(inv) n) ∈ N.
 
   Definition normal_comm : Prop :=
@@ -351,24 +347,77 @@ Section Normal_subgroups.
     forall g1 g2, g1 ∈ G -> g2 ∈ G ->
     g1 @ g2 ∈ N <-> g2 @ g1 ∈ N.
 
-  Definition is_Normal_subgroup_of (carrier : Ensemble C):=
-    carrier ⊆ G /\
-    closed_b carrier G.(op) /\
-    G.(e) ∈ carrier /\
-    closed_u carrier G.(inv) /\
-    ( forall n, n @ g @ n ' ∈ carrier \/
-      g1 @ g2 ∈ carrier <-> g2 @ g1 ∈ carrier).
+  Definition is_Normal_subgroup_of (N : Ensemble C):=
+    N ⊆ G /\
+    closed_b N G.(op) /\
+    G.(e) ∈ N /\
+    closed_u N G.(inv) /\
+    ((forall g n, g ∈ G -> n ∈ N -> n @ g @ n ' ∈ N) \/
+     (forall g1 g2, g1 ∈ G -> g2 ∈ G -> g1 @ g2 ∈ N <-> g2 @ g1 ∈ N)).
 
 End Normal_subgroups.
 
-Section nsg_fact.
-  Variable (N G: Group).
+Section nsg_facts.
+  Context {C : Type}.
+  Variable (N G: @Group C).
   Local Infix "@" := G.(op) (at level 20, left associativity).
+  Local Infix "+" := N.(op)(*  (at level 20, left associativity) *).
+  Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+  Local Notation "a '!'" := (inv N a) (at level 2, left associativity).
+  Local Hint Resolve
+  (closure N) (ein N) (lid N) (rid N) (invin N) (linv N) (rinv N)
+  (closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+              : grp.
 
   Corollary nsg_defns_same : normal_subgroup N G  <-> normal_comm N G.
-  Proof with auto.
-    split.
-    - intros ? ? **. split; intro. unfold normal_subgroup in H.
+  Proof with atg.
+    split; intros [NsgG normal]. ef_sg' NsgG.
+    - split... pose proof (subgroup_has_same_invs NsgG) as Sm_i.
+      intros * G1 G2. split.
+      + intros N12.
+          assert (Getc: (g2 ' @ (g1 ' @ (g2 @ g1 @ g1 @ g2))) ∈ G)
+            by (apply closure;atg).
+        pose proof (normal _ _ Getc N12).
+        rewrite Sm_i, inv_of_op    (* in H... *)
+
+        , (G.(assoc) g1)           (* in H... *)
+        , <- (G.(assoc) g2 (g2 ')) (* in H... *)
+        , rinv, lid                (* in H... *)
+
+        , <- (G.(assoc) g1)        (* in H... *)
+        , rinv, lid                (* in H... *)
+
+        , <- (G.(assoc) _ (g2 '))  (* in H... *)
+        , (G.(assoc) _ g2)         (* in H... *)
+        , rinv, rid                (* in H... *)
+
+        , (G.(assoc) _ g1)         (* in H... *)
+        ,rinv, rid                 (* in H... *)
+
+        in H...
+      + intros N21.
+          assert (Getc: (g1 ' @ (g2 ' @ (g1 @ g2 @ g2 @ g1))) ∈ G)
+            by (apply closure;atg).
+        pose proof (normal _ _ Getc N21).
+        rewrite Sm_i, inv_of_op    (* in H... *)
+
+        , (G.(assoc) g2)           (* in H... *)
+        , <- (G.(assoc) g1 (g1 ')) (* in H... *)
+        , rinv, lid                (* in H... *)
+
+        , <- (G.(assoc) g2)        (* in H... *)
+        , rinv, lid                (* in H... *)
+
+        , <- (G.(assoc) _ (g1 '))  (* in H... *)
+        , (G.(assoc) _ g1)         (* in H... *)
+        , rinv, rid                (* in H... *)
+
+        , (G.(assoc) _ g2)         (* in H... *)
+        ,rinv, rid                 (* in H... *)
+
+        in H...
+  - split... pose proof (subgroup_has_same_invs NsgG) as Sm_i.
+    
 
   Qed.
 End nsg_fact.
