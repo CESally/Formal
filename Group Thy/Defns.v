@@ -65,7 +65,7 @@ Proof with auto.
 Defined.
 
 
-Corollary is_grp__is_Group : forall G : Group,
+Corollary is_grp__is_Group : ∀ G: Group,
  is_Group G.(carrier) G.(op) G.(e) G.(inv).
 Proof.
   intros. decompose [and] (group_axioms G).
@@ -84,6 +84,16 @@ Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
   ~ r_inv carrier op e inv.
 
 End Groups.
+
+Section other_group_constructs.
+  Context {C: Type}.
+  Variable (G: @Group C).
+  Local Infix "@" := (op G) (at level 20, left associativity).
+
+  Definition center : Ensemble C :=
+    (λ z, ∀ g, g ∈ G -> z @ g = g @ z).
+
+End other_group_constructs.
 
 Ltac is_grp  := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
 
@@ -107,7 +117,7 @@ Local Notation r_ident := (r_ident G op).
 Local Infix "@" := op (at level 20, left associativity).
 Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
-Theorem left_can : forall z {x y},
+Theorem left_can : ∀ z {x y},
   x ∈ G -> y ∈ G -> z ∈ G ->
   z @ x = z @ y -> x = y.
 Proof with atg.
@@ -118,7 +128,7 @@ Proof with atg.
   rewrite H...
 Qed.
 
-Theorem right_can : forall z {x y},
+Theorem right_can : ∀ z {x y},
   x ∈ G -> y ∈ G -> z ∈ G ->
   x @ z = y @ z -> x = y.
 Proof with atg.
@@ -168,7 +178,7 @@ Proof with atg.
   rewrite rinv, lid...
 Qed.
 
-Theorem xii__x : forall x, x ∈ G ->
+Theorem xii__x : ∀ x, x ∈ G ->
   x ' ' = x.
 Proof with atg.
   intros **. apply (left_can (x '))...
@@ -206,8 +216,34 @@ Theorem runique_sol : ∀ g1 g2
 Proof with atg.
   intros **. exists (g1 ' @ g2); split.
   - rewrite <- assoc, rinv...
-  - intros ? []. rewrite <- H0, <- assoc, linv...
+  - intros ? [].
+    rewrite <- H0, <- assoc, linv...
 Qed.
+
+Theorem e_is_lunique_sol_gg : ∀ g x,
+  g ∈ G -> x ∈ G ->
+  x @ g = g -> x = e.
+Proof with atg.
+  intros g x Gg Gx xgg.
+  destruct (lunique_sol _ _ Gg Gg)
+    as [x' [[Gx' x'gg] uni]].
+  rewrite <- xgg in x'gg at 2.
+  rewrite
+  <- (right_can _ Gx' Gx Gg x'gg)...
+Qed.
+
+Theorem e_is_runique_sol_gg : ∀ g x,
+  g ∈ G -> x ∈ G ->
+  g @ x = g -> x = e.
+Proof with atg.
+  intros g x Gg Gx gxg.
+  destruct (runique_sol _ _ Gg Gg)
+    as [x' [[Gx' gx'g] uni]].
+  rewrite <- gxg in gx'g at 2.
+  rewrite
+  <- (left_can _ Gx' Gx Gg gx'g)...
+Qed.
+
 
 End basics_facts.
 
@@ -246,6 +282,9 @@ Local Hint Resolve
 (* Local Hint Rewrite @assoc : grp. *)
 Local Infix "@" := (op G) (at level 20, left associativity).
 Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+Local Infix "+" := (op H) .
+Local Notation "a '!'" := (inv H a) (at level 2, left associativity).
+
 
 
 Theorem subgroup_has_same_e : H ≤ G ->
@@ -281,7 +320,7 @@ Proof with atg.
   auto.
 Qed.
 
-Theorem is_Subgroup_of_is_grp : forall carr,
+Theorem is_Subgroup_of_is_grp : ∀ carr,
 is_Subgroup_of G carr -> is_Group carr G.(op) G.(e) G.(inv).
 Proof with atg.
   intros * [? [? []]]. is_grp...
@@ -302,7 +341,9 @@ Proof with atg.
     + rewrite <- subgroup_has_same_e... 
     + intros x Hx.  rewrite <- subgroup_has_same_invs...
   - pose proof H0 as [? [? []]]; split...
-    + admit.
+assert (forall x y, In H x -> In H y -> op H x y = op G x y).
+{ intros.
+    + extensionality. admit.
 Admitted.
 
 
@@ -335,12 +376,12 @@ Section Normal_subgroups.
   Hypothesis G1: g1 ∈ G.
   Hypothesis G2: g2 ∈ G. *)
   Local Infix "@" := G.(op) (at level 20, left associativity).
-  Local Notation "a '''" := (inv N a) (at level 2, left associativity).
+  Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
   Definition normal_subgroup : Prop :=
     subgroup N G /\
-    forall g n, g ∈ G -> n ∈ N ->
-    n @ g @ (N.(inv) n) ∈ N.
+    forall n g, n ∈ N -> g ∈ G ->
+    g @ n @ (g ') ∈ N.
 
   Definition normal_comm : Prop :=
     subgroup N G /\
@@ -352,7 +393,7 @@ Section Normal_subgroups.
     closed_b N G.(op) /\
     G.(e) ∈ N /\
     closed_u N G.(inv) /\
-    ((forall g n, g ∈ G -> n ∈ N -> n @ g @ n ' ∈ N) \/
+    ((forall n g, n ∈ N -> g ∈ G -> g @ n @ g ' ∈ N) \/
      (forall g1 g2, g1 ∈ G -> g2 ∈ G -> g1 @ g2 ∈ N <-> g2 @ g1 ∈ N)).
 
 End Normal_subgroups.
@@ -372,53 +413,21 @@ Section nsg_facts.
   Corollary nsg_defns_same : normal_subgroup N G  <-> normal_comm N G.
   Proof with atg.
     split; intros [NsgG normal]; ef_sg' NsgG.
-    - split... pose proof (subgroup_has_same_invs NsgG) as Sm_i.
+    - split...
       intros * G1 G2. split.
       + intros N12.
-          assert (Getc: (g2 ' @ (g1 ' @ (g2 @ g1 @ g1 @ g2))) ∈ G)
-            by (apply closure;atg).
-        pose proof (normal _ _ Getc N12).
-        rewrite Sm_i, inv_of_op    (* in H... *)
-
-        , (G.(assoc) g1)           (* in H... *)
-        , <- (G.(assoc) g2 (g2 ')) (* in H... *)
-        , rinv, lid                (* in H... *)
-
-        , <- (G.(assoc) g1)        (* in H... *)
-        , rinv, lid                (* in H... *)
-
-        , <- (G.(assoc) _ (g2 '))  (* in H... *)
-        , (G.(assoc) _ g2)         (* in H... *)
-        , rinv, rid                (* in H... *)
-
-        , (G.(assoc) _ g1)         (* in H... *)
-        ,rinv, rid                 (* in H... *)
-
-        in H...
+        epose proof (normal _ (g1 ') N12 _).
+        Unshelve. 2:{ atg. }
+        rewrite xii__x, <- assoc
+              , linv, lid in H...
       + intros N21.
-          assert (Getc: (g1 ' @ (g2 ' @ (g1 @ g2 @ g2 @ g1))) ∈ G)
-            by (apply closure;atg).
-        pose proof (normal _ _ Getc N21).
-        rewrite Sm_i, inv_of_op    (* in H... *)
-
-        , (G.(assoc) g2)           (* in H... *)
-        , <- (G.(assoc) g1 (g1 ')) (* in H... *)
-        , rinv, lid                (* in H... *)
-
-        , <- (G.(assoc) g2)        (* in H... *)
-        , rinv, lid                (* in H... *)
-
-        , <- (G.(assoc) _ (g1 '))  (* in H... *)
-        , (G.(assoc) _ g1)         (* in H... *)
-        , rinv, rid                (* in H... *)
-
-        , (G.(assoc) _ g2)         (* in H... *)
-        ,rinv, rid                 (* in H... *)
-
-        in H...
-  - split... intros * Gg Nn.
-    
-
+        epose proof (normal _ (g2 ') N21 _).
+        Unshelve. 2:{ atg. }
+        rewrite xii__x, <- assoc
+              , linv, lid in H...
+  - split... intros * Nn Gg.
+    destruct (normal (g@n) (g ')) as [_ X]...
+    apply X. rewrite <- assoc, linv, lid...
   Qed.
 End nsg_fact.
 
