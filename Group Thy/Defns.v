@@ -5,85 +5,88 @@ Close Scope N_scope.
 Open Scope group_scope.
 
 
-
-
 Section Groups.
-Context {C : Type}.
+  Context {C : Type}.
 
-Record Group : Type := mkgroup {
-  carrier  : Ensemble C;
-  op : C -> C -> C;
-  e  : C;
-  inv: C -> C;
-  closure : closed_b carrier op;
-  assoc   : is_assoc carrier op;
+  Record Group : Type := mkgroup {
+    carrier  : Ensemble C;
+    op : C -> C -> C;
+    e  : C;
+    inv: C -> C;
+    closure : closed_b carrier op;
+    assoc   : is_assoc carrier op;
 
-  ein : e ∈ carrier;
-  lid : l_ident carrier op e;
-  rid : r_ident carrier op e;
+    ein : e ∈ carrier;
+    lid : l_ident carrier op e;
+    rid : r_ident carrier op e;
 
-  invin : closed_u carrier inv;
-  linv  : l_inv carrier op e inv;
-  rinv  : r_inv carrier op e inv
-}.
+    invin : closed_u carrier inv;
+    linv  : l_inv carrier op e inv;
+    rinv  : r_inv carrier op e inv
+  }.
 
-Coercion carrier: Group >-> Ensemble.
+  Coercion carrier: Group >-> Ensemble.
 
-Remark group_axioms : forall G: Group,
-  closed_b G.(carrier) G.(op) /\
-  is_assoc G.(carrier) G.(op) /\
-  G.(e) ∈ G.(carrier) /\
-  l_ident G.(carrier) G.(op) G.(e) /\
-  r_ident G.(carrier) G.(op) G.(e) /\
-  closed_u G.(carrier) G.(inv) /\
-  l_inv G.(carrier) G.(op) G.(e) G.(inv) /\
-  r_inv G.(carrier) G.(op) G.(e) G.(inv).
-Proof.
-  destruct G; repeat (split; auto).
-Qed.
-
-
-Definition is_Group (carrier : Ensemble C)
-                    (op: C -> C -> C)
-                    (e: C)
-                    (inv: C -> C):=
-  closed_b carrier op /\
-  is_assoc carrier op /\
-  e ∈ carrier /\
-  l_ident carrier op e /\
-  r_ident carrier op e /\
-  closed_u carrier inv /\
-  l_inv carrier op e inv /\
-  r_inv carrier op e inv.
-
-Corollary is_Group__is_grp : ∀ a b c d
-  (H: is_Group a b c d), Group.
-Proof with auto.
-  intros **. unfold is_Group in H.
-  decompose [and] H.
-  apply (mkgroup a b c d)...
-Defined.
+  Remark group_axioms : forall G: Group,
+    closed_b G.(carrier) G.(op) /\
+    is_assoc G.(carrier) G.(op) /\
+    G.(e) ∈ G.(carrier) /\
+    l_ident G.(carrier) G.(op) G.(e) /\
+    r_ident G.(carrier) G.(op) G.(e) /\
+    closed_u G.(carrier) G.(inv) /\
+    l_inv G.(carrier) G.(op) G.(e) G.(inv) /\
+    r_inv G.(carrier) G.(op) G.(e) G.(inv).
+  Proof.
+    destruct G; repeat (split; auto).
+  Qed.
 
 
-Corollary is_grp__is_Group : ∀ G: Group,
- is_Group G.(carrier) G.(op) G.(e) G.(inv).
-Proof.
-  intros. decompose [and] (group_axioms G).
-  repeat split; auto.
-Qed.
+  Definition is_Group (carrier : Ensemble C)
+                      (op: C -> C -> C)
+                      (e: C)
+                      (inv: C -> C):=
+    closed_b carrier op /\
+    is_assoc carrier op /\
+    e ∈ carrier /\
+    l_ident carrier op e /\
+    r_ident carrier op e /\
+    closed_u carrier inv /\
+    l_inv carrier op e inv /\
+    r_inv carrier op e inv.
 
-Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
-                   (e: C) (inv: C -> C):=
-  ~ closed_b carrier op \/
-  ~ is_assoc carrier op \/
-  ~ e ∈ carrier \/
-  ~ l_ident carrier op e \/
-  ~ r_ident carrier op e \/
-  ~ closed_u carrier inv \/
-  ~ l_inv carrier op e inv \/
-  ~ r_inv carrier op e inv.
+  Corollary grpify_is_Group : ∀ {a b c d}
+    (H: is_Group a b c d), Group.
+  Proof with auto.
+    intros **. unfold is_Group in H.
+    decompose [and] H.
+    apply (mkgroup a b c d)...
+  Defined.
+
+  Corollary is_grp__is_Group : ∀ G: Group,
+   is_Group G.(carrier) G.(op) G.(e) G.(inv).
+  Proof.
+    intros. decompose [and] (group_axioms G).
+    repeat split; auto.
+  Qed.
+
+  Definition isn't_Group (carrier : Ensemble C) (op: C -> C -> C)
+                         (e: C) (inv: C -> C):=
+    ~ closed_b carrier op \/
+    ~ is_assoc carrier op \/
+    ~ e ∈ carrier \/
+    ~ l_ident carrier op e \/
+    ~ r_ident carrier op e \/
+    ~ closed_u carrier inv \/
+    ~ l_inv carrier op e inv \/
+    ~ r_inv carrier op e inv.
+
+  Definition grpify (G: Group) : Group := G.
 
 End Groups.
+
+Coercion grpify_is_Group : is_Group >-> Group.
+Hint Resolve @ein : grp.
+
 
 Section other_group_constructs.
   Context {C: Type}.
@@ -92,7 +95,6 @@ Section other_group_constructs.
 
   Definition center : Ensemble C :=
     (λ z, ∀ g, g ∈ G -> z @ g = g @ z).
-
 End other_group_constructs.
 
 Ltac is_grp  := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
@@ -102,7 +104,7 @@ Section basics_facts.
 Context {C: Type}.
 Variable (G: @Group C).
 Local Hint Resolve
-(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+(closure G) (lid G) (rid G) (invin G) (linv G) (rinv G)
 : grp.
 Local Notation e := (e G).
 Local Notation op := (op G).
@@ -244,12 +246,11 @@ Proof with atg.
   <- (left_can _ Gx' Gx Gg gx'g)...
 Qed.
 
-
 End basics_facts.
 
 
-
-
+Hint Resolve @e_own_inv : grp.
+Hint Rewrite @xii__x : grp.
 
 
 Section Subgroups.
@@ -267,15 +268,17 @@ Section Subgroups.
 End Subgroups.
 
 Notation "H ≤ G" := (subgroup H G) : group_scope.
-Ltac is_sgrp := split;[|split;[|split]].
+Ltac is_sgrp := first [ progress (split;[|split;[|split]])
+                      | progress (split;[|split;[|split;[|split]]]) ].
+
 
 Section subgroup_facts.
 Context {C : Type}.
 Context {K H G: @ Group C}.
 Local Hint Resolve
-(closure K) (ein K) (lid K) (rid K) (invin K) (linv K) (rinv K)
-(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
-(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+(closure K) (lid K) (rid K) (invin K) (linv K) (rinv K)
+(closure H) (lid H) (rid H) (invin H) (linv H) (rinv H)
+(closure G) (lid G) (rid G) (invin G) (linv G) (rinv G)
               : grp.
 
 
@@ -285,6 +288,32 @@ Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 Local Infix "+" := (op H) .
 Local Notation "a '!'" := (inv H a) (at level 2, left associativity).
 
+
+Theorem is_Subgroup_of_is_grp : ∀ {carr},
+   is_Subgroup_of G carr -> is_Group carr G.(op) G.(e) G.(inv).
+Proof with atg.
+  intros * [? [? []]]. is_grp...
+  - intros x y z xin yin zin.
+    apply assoc...
+  - intros x _ xin. rewrite G.(lid)...
+  - intros x _ xin. rewrite G.(rid)...
+  - intros x   xin. rewrite G.(linv)...
+  - intros x   xin. rewrite G.(rinv)...
+Qed.
+
+Theorem grpify_is_Subgroup_of : ∀ {carr},
+   is_Subgroup_of G carr -> @Group C.
+Proof.
+  intros * X. apply is_Subgroup_of_is_grp in X.
+  unfold is_Group in X. decompose [and] X.
+  refine (mkgroup
+    carr
+    G.(op)
+    G.(e)
+    G.(inv)
+    _ _ _ _ _ _ _ _
+  ); auto.
+Qed.
 
 
 Theorem subgroup_has_same_e : H ≤ G ->
@@ -320,18 +349,6 @@ Proof with atg.
   auto.
 Qed.
 
-Theorem is_Subgroup_of_is_grp : ∀ carr,
-is_Subgroup_of G carr -> is_Group carr G.(op) G.(e) G.(inv).
-Proof with atg.
-  intros * [? [? []]]. is_grp...
-  - intros x y z xin yin zin.
-    apply assoc...
-  - intros x _ xin. rewrite G.(lid)...
-  - intros x _ xin. rewrite G.(rid)...
-  - intros x   xin. rewrite G.(linv)...
-  - intros x   xin. rewrite G.(rinv)...
-Qed.
-
 Corollary  bob :
 H ≤ G <-> is_Subgroup_of G H.(carrier).
 Proof with atg.
@@ -341,9 +358,7 @@ Proof with atg.
     + rewrite <- subgroup_has_same_e... 
     + intros x Hx.  rewrite <- subgroup_has_same_invs...
   - pose proof H0 as [? [? []]]; split...
-assert (forall x y, In H x -> In H y -> op H x y = op G x y).
-{ intros.
-    + extensionality. admit.
+    + admit. 
 Admitted.
 
 
@@ -353,7 +368,7 @@ Proof with atg.
   is_sgrp...
   - intros x ->...
   - intros x y -> ->...
-  - intros x ->. rewrite e_own_inv...
+  - intros x ->...
 Qed.
 
 Theorem improper_sg : is_Subgroup_of G (fun x => G.(carrier) x).
@@ -361,84 +376,195 @@ Proof with atg. is_sgrp... Qed.
 
 End subgroup_facts.
 
+
+Hint Resolve subgroup_contains_e : grp.
+
 Ltac ef_sg' HsgG := pose proof HsgG as [?incl ?Sm_o].
 Ltac ef_sg  HsgG a b := pose proof HsgG as [a b].
 
 
+Section Cosets.
+  Context {C : Type}.
 
+  Definition  left_coset {G: @Group C} (g: C) (H: @Group C) : Ensemble C :=
+    λ x, g ∈ G /\ (H ≤ G ->
+      ∃ h, h ∈ H /\ op G g h = x).
+
+  Definition right_coset {G: @Group C} (H: @Group C) (g: C) : Ensemble C :=
+    λ x, g ∈ G /\ (H ≤ G ->
+      ∃ h, h ∈ H /\ op G h g = x).
+
+  Inductive  left_coset_ind {G: @Group C} (g: C) (H: @Group C) : Ensemble C :=
+    lci: g ∈ G -> H ≤ G ->
+      ∀ h, h ∈ H -> op G g h ∈ @left_coset_ind G g H.
+
+  Inductive right_coset_ind {G: @Group C} (H: @Group C) (g: C) : Ensemble C :=
+    rci: g ∈ G -> H ≤ G ->
+      ∀ h, h ∈ H -> op G h g ∈ @right_coset_ind G H g.
+
+(*   Definition conjugate_set *)
+End Cosets.
+
+Notation "g 'l^' H" := ( left_coset g H) (at level 20, no associativity).
+Notation "H '^r' g" := (right_coset H g) (at level 20, no associativity).
+Notation "g 'i^' H" := ( left_coset_ind g H) (at level 20, no associativity).
+Notation "H '^i' g" := (right_coset_ind H g) (at level 20, no associativity).
 
 Section Normal_subgroups.
   Context {C : Type}.
   Variable (N G: @Group C).
-(*   Variable (N G: Group) (n g g1 g2: C).
-  Hypothesis Nn: n ∈ N.
-  Hypothesis Gg: g ∈ G.
-  Hypothesis G1: g1 ∈ G.
-  Hypothesis G2: g2 ∈ G. *)
   Local Infix "@" := G.(op) (at level 20, left associativity).
   Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
   Definition normal_subgroup : Prop :=
-    subgroup N G /\
-    forall n g, n ∈ N -> g ∈ G ->
+    N ≤ G /\
+    ∀ n g, n ∈ N -> g ∈ G ->
     g @ n @ (g ') ∈ N.
 
   Definition normal_comm : Prop :=
-    subgroup N G /\
-    forall g1 g2, g1 ∈ G -> g2 ∈ G ->
+    N ≤ G /\
+    ∀ g1 g2, g1 ∈ G -> g2 ∈ G ->
     g1 @ g2 ∈ N <-> g2 @ g1 ∈ N.
 
-  Definition is_Normal_subgroup_of (N : Ensemble C):=
+  Definition normal_cosets : Prop :=
+    N ≤ G /\
+    ∀ g , (@left_coset C G g N) == (@right_coset C G N g).
+
+
+  Definition normal_modular (normal: Ensemble C -> Group -> Prop) : Prop :=
+    subgroup N G /\
+    normal N G.
+
+  Definition is_Normal_subgroup_of (N : Ensemble C) :=
     N ⊆ G /\
     closed_b N G.(op) /\
     G.(e) ∈ N /\
     closed_u N G.(inv) /\
-    ((forall n g, n ∈ N -> g ∈ G -> g @ n @ g ' ∈ N) \/
-     (forall g1 g2, g1 ∈ G -> g2 ∈ G -> g1 @ g2 ∈ N <-> g2 @ g1 ∈ N)).
+    ((∀ n g, n ∈ N -> g ∈ G -> g @ n @ g ' ∈ N) \/
+     (∀ g1 g2, g1 ∈ G -> g2 ∈ G -> g1 @ g2 ∈ N <-> g2 @ g1 ∈ N)).
+
+  Definition is_Normal_subgroup_of_modular
+    (N : Ensemble C) (normal: Ensemble C -> Group -> Prop) :=
+    N ⊆ G /\
+    closed_b N G.(op) /\
+    G.(e) ∈ N /\
+    closed_u N G.(inv) /\
+    normal N G.
+
+  Definition nmod_conjugate (N: Ensemble C) (G: @Group C): Prop :=
+    ∀ n g, n ∈ N -> g ∈ G ->      op G (op G g n) (G.(inv) g) ∈ N.
+
+  Definition nmod_comm (N: Ensemble C) (G: @Group C): Prop :=
+    ∀ g1 g2, g1 ∈ G -> g2 ∈ G ->    G.(op) g1 g2 ∈ N <-> G.(op) g2 g1 ∈ N.
 
 End Normal_subgroups.
 
 Section nsg_facts.
-  Context {C : Type}.
-  Variable (N G: @Group C).
-  Local Infix "@" := G.(op) (at level 20, left associativity).
-  Local Infix "+" := N.(op)(*  (at level 20, left associativity) *).
-  Local Notation "a '''" := (inv G a) (at level 2, left associativity).
-  Local Notation "a '!'" := (inv N a) (at level 2, left associativity).
-  Local Hint Resolve
-  (closure N) (ein N) (lid N) (rid N) (invin N) (linv N) (rinv N)
-  (closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
-              : grp.
+Context {C : Type}.
+Variable (N G: @Group C).
+Local Infix "@" := G.(op) (at level 20, left associativity).
+Local Infix "+" := N.(op)(*  (at level 20, left associativity) *).
+Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+Local Notation "a '!'" := (inv N a) (at level 2, left associativity).
+Local Hint Resolve
+(closure N) (lid N) (rid N) (invin N) (linv N) (rinv N)
+(closure G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+            : grp.
 
-  Corollary nsg_defns_same : normal_subgroup N G  <-> normal_comm N G.
-  Proof with atg.
-    split; intros [NsgG normal]; ef_sg' NsgG.
-    - split...
-      intros * G1 G2. split.
-      + intros N12.
-        epose proof (normal _ (g1 ') N12 _).
-        Unshelve. 2:{ atg. }
-        rewrite xii__x, <- assoc
-              , linv, lid in H...
-      + intros N21.
-        epose proof (normal _ (g2 ') N21 _).
-        Unshelve. 2:{ atg. }
-        rewrite xii__x, <- assoc
-              , linv, lid in H...
+
+Example sanity_check : normal_comm N G <-> normal_modular N G nmod_comm.
+Proof with atg.
+  split; intros []; split...
+Qed.
+
+Corollary nsg_defns_same1 : normal_subgroup N G  <-> normal_comm N G.
+Proof with atg.
+  split; intros [NsgG normal]; ef_sg' NsgG.
+  - split...
+    intros * G1 G2. split.
+    + intros N12.
+      epose proof (normal _ (g1 ') N12 _).
+      Unshelve. 2:{ atg. }
+      rewrite xii__x, <- assoc
+            , linv, lid in H...
+    + intros N21.
+      epose proof (normal _ (g2 ') N21 _).
+      Unshelve. 2:{ atg. }
+      rewrite xii__x, <- assoc
+            , linv, lid in H...
   - split... intros * Nn Gg.
     destruct (normal (g@n) (g ')) as [_ X]...
     apply X. rewrite <- assoc, linv, lid...
-  Qed.
-End nsg_fact.
+Qed.
+
+Corollary nsg_defns_same2 : normal_cosets N G  <-> normal_comm N G.
+Proof with atg.
+  split; intros [NsgG normal]; ef_sg' NsgG; split...
+  - intros g1 g2 G1 G2; split.
+    + intros N12. destruct (normal (g1 ') g2)
+                  as [[_ [g2g1 [N21 pr1'2]]] _]... {
+        split... intros _. exists (g1@g2).
+        split... rewrite <- assoc, G.(linv)... }
+      destruct (lunique_sol G (g1 ') g2) as [pr [_ uni]]...
+      rewrite <- (uni g2g1), (uni (g2@g1)) in N21...
+      split... rewrite assoc, G.(rinv)...
+    + intros N21. destruct (normal (g1 ') g2)
+                  as [_ [_ [g2g1 [N12 g2'pr1]]]]... clear _tmp. {
+        split... intros _. exists (g2@g1).
+        split... rewrite assoc, G.(rinv)... }
+      destruct (runique_sol G (g1 ') g2) as [pr [_ uni]]...
+      rewrite <- (uni g2g1), (uni (g1@g2)) in N12...
+      split... rewrite <- assoc, G.(linv)...
+  - intros g x; split.
+    + intros [Gg [n [Nn <-]]]... split...
+      exists (g @ n @ g '). split.
+      * rewrite normal, <- assoc, G.(linv)
+        , <- (subgroup_has_same_e NsgG)
+        , <- Sm_o...
+      * rewrite assoc, G.(linv)...
+    + intros [Gg [n [Nn <-]]]... split...
+      exists (g ' @ (n @ g)). split.
+      * rewrite normal, assoc, G.(rinv)
+        , <- (subgroup_has_same_e NsgG)
+        , <- Sm_o...
+      * rewrite <- assoc, G.(rinv)...
+Qed.
+
+Corollary triv_is_nsg : is_Normal_subgroup_of G (fun x => x = G.(e)).
+Proof with atg.
+  split;[|split;[|split;[|split]]]...
+  - intros x ->...
+  - intros x y -> ->...
+  - intros x ->...
+  - left; intros n g -> Gg...
+    rewrite rid...
+Qed.
+
+End nsg_facts.
+
+
+
 
 
 
 Section Cyclic_subgroups.
 Export BinPos.Pos.
 Close Scope positive_scope.
+  Context {C : Type}.
+  Variable (H G: @Group C).
+  Local Infix "@" := G.(op) (at level 20, left associativity).
+  Local Infix "+" := N.(op)(*  (at level 20, left associativity) *).
+  Local Notation "a '''" := (inv G a) (at level 2, left associativity).
+  Local Notation "a '!'" := (inv N a) (at level 2, left associativity).
+(*   Local Hint Resolve
+  (closure H) (lid H) (rid N) (invin N) (linv N) (rinv N)
+  (closure G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+              : grp. *)
+
+
 Definition rep_aux (id x: C) := iter (fun y => x @ y) id.
 
-Definition rep (n: Z) : C :=
+Definition rep (n: Z) (g: C) : C :=
   match n with
   | Zpos p => rep_aux G.(e) g p
   | Zneg p => rep_aux G.(e) (g ') p
@@ -448,22 +574,9 @@ Definition rep (n: Z) : C :=
 (* Definition cyclic_subgroup : Prop :=
   subgroup /\
   ∀ (n: Z), rep n ∈ H.(carrier). *)
-
-Inductive left_coset : Ensemble C :=
-  lft_cs: subgroup ->
-        g @ h ∈ (left_coset).
-
-Inductive right_coset (g: C): Ensemble C :=
-  rgt_cs: subgroup ->
-          h @ g ∈ (right_coset g).
-End Subgroups.
-End Defn.
+End Cyclic_subgroups.
 
 
-Arguments subgroup_ind [_].
-Arguments subgroup_prop [_].
-Local Notation subgroup := subgroup_prop.
-Notation "A ≤ B" := (subgroup A B) (at level 70) : group_scope.
 
 Section Homomorphisms.
 Section top.
@@ -484,22 +597,23 @@ Definition fn := C -> D.
 (* carrier to carrier *)
 Definition c2c (f:fn) := ∀ x (Gx: x ∈ G), f x ∈ H.
 Definition structure_preserving (f: fn) := c2c f /\
-  ∀ a b, (f:fn) (a @ b) = (f:fn) a + (f:fn) b.
+  ∀ a b (Ga: a ∈ G) (Gb: b ∈ G),
+    (f:fn) (a @ b) = (f:fn) a + (f:fn) b.
 Definition homomorphism :=
   {f: fn |  structure_preserving f}.
 Definition homo2fn (h: homomorphism) : fn := proj1_sig h.
 Coercion   homo2fn : homomorphism >-> fn.
 Definition homosp (h: homomorphism) := proj2_sig h.
 
-Lemma homo_img_in : ∀ (f: homomorphism) x,
-  x ∈ G -> (f:fn) x ∈ H.
+Lemma homo_img_in : ∀ (f: homomorphism) x (Gx: x ∈ G),
+  (f:fn) x ∈ H.
 Proof.
   intros f. destruct f as [f [ghomo sp]].
   exact ghomo.
 Qed.
 
-Lemma homo_img_in' : ∀ f x, c2c f ->
-  x ∈ G -> f x ∈ H.
+Lemma homo_img_in' : ∀ f x (Gx: x ∈ G),
+  c2c f -> f x ∈ H.
 Proof. intros **. apply H0; auto. Qed.
 
 Variable (f: homomorphism).
@@ -514,7 +628,7 @@ End top.
 
 Arguments structure_preserving [_ _ _ _].
 
-Section inverse.
+Section Isomorphisms.
 Context {C D: Type}.
 Variable (G: @Group C) (H: @Group D).
 Variable (g g1 g2: C) (h h1 h2: D).
@@ -530,11 +644,11 @@ Infix "+" := H.(op) (at level 50, left associativity).
 
 Definition Bijective (f: @fn C D) :=
   ∃ f' : @fn D C, @structure_preserving D C H G f' /\
-    (∀ x, x ∈ G -> (f' (f x) = x)) /\
-    (∀ y, y ∈ H -> (f (f' y) = y)).
+    (∀ x (Gx: x ∈ G), (f' (f x) = x)) /\
+    (∀ y (Gy: y ∈ H), (f (f' y) = y)).
 
 Definition Injective (f: @fn C D) :=
-  ∀ x y, x ∈ G -> y ∈ G ->
+  ∀ x y (Gx: x ∈ G) (Gy: y ∈ G),
   f x = f y -> x = y.
 
 Definition Surjective (f: @fn C D) :=
@@ -549,8 +663,10 @@ Definition isomorphism :=
 Definition iso2homo (h: isomorphism): homomorphism G H :=
   exist _ (proj1_sig (sig_of_sig2 h)) (proj2_sig (sig_of_sig2 h)).
 Coercion   iso2homo : isomorphism >-> homomorphism.
+
 Definition iso2fn (h: isomorphism) : fn := (proj1_sig (sig_of_sig2 h)).
 Coercion   iso2fn : isomorphism >-> fn.
+
 Definition isosp (h: isomorphism) := (proj2_sig (sig_of_sig2 h)).
 Definition isob (h: isomorphism) := proj3_sig h.
 
@@ -626,7 +742,7 @@ Definition is_Isomorphic : Prop := exists (f:isomorphism), True.
 Proof with auto.
 Admitted. *)
 
-End inverse.
+End Isomorphisms.
 End Homomorphisms.
 
 Arguments Bi2I_S [_ _ _ _ _].
@@ -648,6 +764,10 @@ Ltac diso  f := iso2is f;
                 simpl in *.
 
 
+Ltac is_morph :=
+  match goal with
+  | |- is_Isomorphism _ _ _ => split;[split|]
+  end.
 
 
 

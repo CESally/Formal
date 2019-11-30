@@ -25,6 +25,8 @@ Local Notation r_ident := (r_ident G op).
 Local Notation rep_aux := (rep_aux G).
 Local Notation idempotent := (idempotent G op).
 Local Notation order2 := (order2 G op e).
+Local Notation left_can := (left_can G).
+Local Notation right_can := (right_can G).
 Hypothesis Ga : a ∈ G.
 Hypothesis Gb : b ∈ G.
 Hypothesis Gc : c ∈ G.
@@ -32,7 +34,7 @@ Local Infix "@" := op (at level 20, left associativity).
 Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 
 
-Theorem rep_aux_in : ∀ {x p} {Gx: x ∈ G},
+(* Theorem rep_aux_in : ∀ {x p} {Gx: x ∈ G},
   rep_aux e x p ∈ G.
 Proof with auto.
   intros **. unfold rep_aux.
@@ -53,7 +55,7 @@ Local Open Scope Z_scope.
 
 Theorem cyclic_inv : ∀ i, (@rep C G a i) ' = @rep C G a (- i).
 Proof with auto.
-Admitted.
+Admitted. *)
 
 
 
@@ -82,7 +84,8 @@ Qed.
 
 Theorem order2__abelian : (∀ x, order2 x) -> is_comm G op.
 Proof with atg.
-  intros o2 x y Gx Gy. apply (left_can x), (right_can y)...
+  intros o2 x y Gx Gy.
+  apply (left_can x), (right_can y)...
   repeat rewrite <- assoc...
   pose proof (o2 x) as [_ o2x].
   pose proof (o2 y) as [_ o2y].
@@ -121,91 +124,13 @@ Qed.
 
 End elementary.
 
-Section subgroups1.
-Context {C : Type}.
-Context {K H G: @ Group C}.
-Local Hint Resolve
-(closure K) (ein K) (lid K) (rid K) (invin K) (linv K) (rinv K)
-(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
-(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
-              : grp.
-Local Hint Rewrite @assoc : grp.
-
-
-Theorem subgroup_has_same_e : H ≤ G ->
-  H.(e) = G.(e).
-Proof with atg.
-  intros [HiG Sm_o].
-  destruct (lunique_sol G H.(e) H.(e))
-    as [eG [[GeG X] uniG]]...
-  rewrite <- (uniG G.(e)) by (split; atg).
-  rewrite <- (uniG H.(e)) by
-    (split;[|rewrite <- Sm_o, H.(lid)]; atg).
-  auto.
-Qed.
-
-Lemma subgroup_contains_e : H ≤ G ->
-  G.(e) ∈ H.
-Proof with atg.
-  intros HsgG.
-  rewrite <- (subgroup_has_same_e HsgG)...
-Qed.
-
-Lemma subgroup_has_same_invs : H ≤ G ->
-  ∀ a, a ∈ H ->
-  H.(inv) a = G.(inv) a.
-Proof with atg.
-  intros HsgG a Ha.
-  pose proof HsgG as [HiG Sm_o].
-  pose proof (subgroup_has_same_e HsgG) as Sm_e.
-  destruct (lunique_sol G a H.(e))
-    as [a' [[GeG X] uniG]]...
-  rewrite <- (uniG (G.(inv) a)) by (split;[|rewrite Sm_e];atg).
-  rewrite <- (uniG (H.(inv) a)) by (split;[|rewrite <- Sm_o];atg).
-  auto.
-Qed.
-
-Theorem is_Subgroup_of_is_grp : forall carr,
-is_Subgroup_of G carr -> is_Group carr G.(op) G.(e) G.(inv).
-Proof with atg.
-  intros * [? [? []]]. is_grp.
-  - intros x y z xin yin zin.
-    apply assoc...
-Qed. 
-  
-
-
-Theorem trivial_sg : is_Subgroup_of G (fun x => x = G.(e)).
-Proof with atg.
-  is_sgrp...
-  - intros x ->...
-  - intros x y -> ->...
-  - intros x y z -> -> ->.
-    apply assoc...
-  - intros x _ ->...
-  - intros x _ ->...
-  - intros x ->. rewrite e_own_inv...
-  - intros x ->...
-  - intros x ->...
-Qed.
-
-Theorem improper_sg : is_Subgroup_of G (fun x => G.(carrier) x).
-Proof with atg.
-  is_sgrp...
-  - intros x y z Gx Gy Gz.
-    apply assoc...
-Qed.
-
-
-End subgroups1.
-
 Section subgroups2.
 Context {C : Type}.
 Context {K H G: @ Group C}.
 Local Hint Resolve
-(closure K) (ein K) (lid K) (rid K) (invin K) (linv K) (rinv K)
-(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
-(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+(closure K) (lid K) (rid K) (invin K) (linv K) (rinv K)
+(closure H) (lid H) (rid H) (invin H) (linv H) (rinv H)
+(closure G) (lid G) (rid G) (invin G) (linv G) (rinv G)
               : grp.
 Local Hint Rewrite @assoc : grp.
 
@@ -219,22 +144,15 @@ Local Notation "a '''" := (inv G a) (at level 2, left associativity).
 Lemma intersection_preserves_sgness : K ≤ G -> H ≤ G ->
   is_Subgroup_of G (fun x => x ∈ H /\ x ∈ K).
 Proof with eatg.
-  intros KsgG HsgG.
-  pose proof KsgG as [KiG sok].
-  pose proof HsgG as [HiG soh]. is_sgrp...
+  intros KsgG HsgG. ef_sg KsgG KiG sok.
+   ef_sg HsgG HiG soh. is_sgrp.
   - intros x [Hx Kx]...
   - intros x y [Hx Kx] [Hy Ky].
     split;[rewrite <- soh|rewrite <- sok];
     apply closure...
-  - intros x y z [Hx _] [Hy _] [Hz _].
-    apply assoc...
   - split; erewrite <- (subgroup_has_same_e)...
-  - intros x [] []. rewrite lid...
-  - intros x [] []. rewrite rid...
   - intros x [Hx Kx]. split;
     erewrite <- subgroup_has_same_invs...
-  - intros x [Hx Kx]. rewrite linv...
-  - intros x [Hx Kx]. rewrite rinv...
 Qed.
 
 
@@ -248,18 +166,12 @@ Proof with atg.
     + apply closure...
     + rewrite assoc, yac, <- assoc,
       xac, assoc...
-  - intros x y z [Gx _] [Gy _] [Gz _].
-    apply assoc...
   - split... rewrite lid, rid...
-  - intros x _ [Gx _]. rewrite lid...
-  - intros x _ [Gx _]. rewrite rid...
   - intros x [Gx xac]. split...
     apply (@left_can C G x)...
     repeat rewrite <- assoc...
     rewrite rinv, lid, xac, assoc,
             rinv, rid...
-  - intros x [Gx _]. apply linv...
-  - intros x [Gx _]. apply rinv...
 Qed.
 
 End subgroups2.
@@ -303,7 +215,6 @@ Proof with atg.
   - intros x _ ->...
   - intros x _ ->...
   - intros x ->...
-    rewrite e_own_inv...
   - intros x ->...
   - intros x ->...
 Defined.
@@ -378,13 +289,6 @@ Proof with auto.
   split... + intros x [Gx _]...
 Qed.
 
-
-
-
-
-
-
-
 End semiconcreteSG.
 
 Section twoG.
@@ -392,8 +296,8 @@ Context {C D : Type}.
 Context {G: @Group C} {H: @Group D}.
 Variable (g g1 g2: C) (h h1 h2: D).
 Local Hint Resolve
-(closure H) (ein H) (lid H) (rid H) (invin H) (linv H) (rinv H)
-(closure G) (ein G) (lid G) (rid G) (invin G) (linv G) (rinv G)
+(closure H) (lid H) (rid H) (invin H) (linv H) (rinv H)
+(closure G) (lid G) (rid G) (invin G) (linv G) (rinv G)
               : grp.
 
 (* Local Notation carrier := (carrier G).
@@ -430,7 +334,8 @@ Proof with atg.
   diso f.
   destruct (sur H.(e) H.(ein)) as [eG [GeG X]].
   pose proof (sp G.(e) eG) as Z.
-  rewrite G.(lid), X, H.(rid)in Z...
+  rewrite lid, X, rid in Z...
+  rewrite Z...
 Qed.
 
 Theorem iso_preserves_inv : (f:fn) (g ') = ((f:fn) g) !.
@@ -439,14 +344,28 @@ Proof with atg.
   rewrite <- sp, rinv, rinv...
   destruct (sur H.(e) H.(ein)) as [eG [GeG X]].
   pose proof (sp G.(e) eG) as Z.
-  rewrite G.(lid), X, H.(rid) in Z...
+  rewrite lid, X, rid in Z...
+  rewrite Z...
 Qed.
 
-Theorem conjugate_g__is_iso : is_Isomorphism G G (fun x => x @ g @ x ').
+Theorem conjugate_g__is_iso : is_Isomorphism G G (fun x => g @ x @ g ').
 Proof with atg.
-  diso f. repeat split.
+  is_morph.
   - intros x Gx. apply closure...
-  -
+  - intros **. rewrite (G.(assoc) (g@a) (g '))
+    , <- (G.(assoc) (g '))
+    , <- (G.(assoc) (g ')), linv, lid...
+    repeat rewrite assoc...
+  - exists (λ x : C, g ' @ x @ g). split;split;intros **.
+    + intros x Gx.   apply closure...
+    + rewrite (G.(assoc) (g '@a) (g))
+      , <- (G.(assoc) g)
+      , <- (G.(assoc) g), rinv, lid...
+      repeat rewrite assoc...
+    + repeat rewrite assoc...
+      rewrite linv, rid, <- assoc, linv...
+    + repeat rewrite assoc...
+      rewrite rinv, rid, <- assoc, rinv... 
   
 Qed.
 

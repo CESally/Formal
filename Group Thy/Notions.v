@@ -60,6 +60,11 @@ Definition is_r_inv_of (x' x e:C) : Prop := x @ x' = e.
 
 Definition conjugate (h g: C) : C := h @ g @ (inv h).
 
+Definition set_eq (A B: Ensemble C) := ∀ x,
+  x ∈ A <-> x ∈ B.
+
 End top.
+
+Notation "A '==' B" := (set_eq A B) (at level 100, no associativity) : group_scope.
 
 Close Scope group_scope.
