@@ -44,7 +44,7 @@ Section Groups.
   Definition is_Group (carrier : Ensemble C)
                       (op: C -> C -> C)
                       (e: C)
-                      (inv: C -> C):=
+                      (inv: C -> C) :=
     closed_b carrier op /\
     is_assoc carrier op /\
     e ∈ carrier /\
@@ -82,11 +82,27 @@ Section Groups.
 
   Definition grpify (G: Group) : Group := G.
 
+  Corollary sanity_check_is_Group : ∀ (G: Group)
+    (X: is_Group G.(carrier) G.(op) G.(e) G.(inv))
+    (G' := grpify_is_Group X),
+    G'.(carrier) = G.(carrier) /\
+    G'.(op) = G.(op) /\
+    G'.(e) = G.(e) /\
+    G'.(inv) = G.(inv).
+  Proof with auto.
+    intros **. destruct X
+      as [A [B [D [E [F [H [I J]]]]]]].
+    destruct G...
+  Qed.
+
 End Groups.
+
 
 Coercion grpify_is_Group : is_Group >-> Group.
 Hint Resolve @ein : grp.
+Hint Unfold is_Group : grp.
 
+Ltac is_grp := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
 
 Section other_group_constructs.
   Context {C: Type}.
@@ -96,8 +112,6 @@ Section other_group_constructs.
   Definition center : Ensemble C :=
     (λ z, ∀ g, g ∈ G -> z @ g = g @ z).
 End other_group_constructs.
-
-Ltac is_grp  := split;[|split;[|split;[|split;[|split;[|split;[|split]]]]]].
 
 
 Section basics_facts.
@@ -114,6 +128,7 @@ Local Notation rid := (rid G).
 Local Notation linv := (linv G).
 Local Notation rinv := (rinv G).
 Local Notation ident := (ident G op).
+Local Notation idempotent := (idempotent G op).
 Local Notation l_ident := (l_ident G op).
 Local Notation r_ident := (r_ident G op).
 Local Infix "@" := op (at level 20, left associativity).
@@ -246,6 +261,14 @@ Proof with atg.
   <- (left_can _ Gx' Gx Gg gx'g)...
 Qed.
 
+Corollary e_is_ident : ident e.
+Proof. split;atg. Qed.
+
+Corollary e_is_idempotent : idempotent e.
+Proof (conj (ein G) (rid e (ein G) (ein G))).
+(* Proof. atg. Qed. *)
+
+
 End basics_facts.
 
 
@@ -268,9 +291,6 @@ Section Subgroups.
 End Subgroups.
 
 Notation "H ≤ G" := (subgroup H G) : group_scope.
-Ltac is_sgrp := first [ progress (split;[|split;[|split]])
-                      | progress (split;[|split;[|split;[|split]]]) ].
-
 
 Section subgroup_facts.
 Context {C : Type}.
@@ -295,10 +315,6 @@ Proof with atg.
   intros * [? [? []]]. is_grp...
   - intros x y z xin yin zin.
     apply assoc...
-  - intros x _ xin. rewrite G.(lid)...
-  - intros x _ xin. rewrite G.(rid)...
-  - intros x   xin. rewrite G.(linv)...
-  - intros x   xin. rewrite G.(rinv)...
 Qed.
 
 Theorem grpify_is_Subgroup_of : ∀ {carr},
@@ -365,14 +381,16 @@ Admitted.
 
 Theorem trivial_sg : is_Subgroup_of G (λ x, x = G.(e)).
 Proof with atg.
-  is_sgrp...
+  split;[|split;[|split]]...
   - intros x ->...
   - intros x y -> ->...
   - intros x ->...
 Qed.
 
 Theorem improper_sg : is_Subgroup_of G (fun x => G.(carrier) x).
-Proof with atg. is_sgrp... Qed.
+Proof with atg.
+  split;[|split;[|split]]...
+Qed.
 
 End subgroup_facts.
 
@@ -748,6 +766,7 @@ End Homomorphisms.
 Arguments Bi2I_S [_ _ _ _ _].
 Arguments rep [_ _].
 Arguments Iso2I_S [_ _ _ _].
+Hint Resolve homo_img_in : grp.
 
 Ltac iso2is iso := destruct (Iso2I_S iso) as [?inj ?sur].
 Ltac b2is  bi := destruct (Bi2I_S bi) as [?inj ?sur].
@@ -764,9 +783,15 @@ Ltac diso  f := iso2is f;
                 simpl in *.
 
 
-Ltac is_morph :=
+Ltac is_ :=
+  let three := split;[split|] in
+  let four := split;[|split;[|split]] in
+  let five := split;[|split;[|split;[|split]]] in
   match goal with
-  | |- is_Isomorphism _ _ _ => split;[split|]
+  | |- is_Group _ _ _ _ => is_grp
+  | |- is_Subgroup_of _ _ => four
+  | |- is_Normal_subgroup_of _ _ => five
+  | |- is_Isomorphism _ _ _ => three
   end.
 
 
@@ -777,5 +802,4 @@ Ltac is_morph :=
 
 
 
-Hint Resolve homo_img_in : grp.
 Close Scope group_scope.

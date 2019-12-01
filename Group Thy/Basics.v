@@ -69,6 +69,14 @@ Proof with atg.
     rewrite assoc, idem...
 Qed.
 
+Theorem idem__ident2 : ∀ x, x ∈ G ->
+  (idempotent x) -> ident x.
+Proof with atg.
+  intros * Gx [_ idem].
+  rewrite (e_is_lunique_sol_gg G x x)...
+Qed.
+
+
 Theorem idem__unique : ∀ x y
   (Gx: x ∈ G)
   (Gy: y ∈ G)
@@ -145,7 +153,7 @@ Lemma intersection_preserves_sgness : K ≤ G -> H ≤ G ->
   is_Subgroup_of G (fun x => x ∈ H /\ x ∈ K).
 Proof with eatg.
   intros KsgG HsgG. ef_sg KsgG KiG sok.
-   ef_sg HsgG HiG soh. is_sgrp.
+   ef_sg HsgG HiG soh. is_.
   - intros x [Hx Kx]...
   - intros x y [Hx Kx] [Hy Ky].
     split;[rewrite <- soh|rewrite <- sok];
@@ -160,7 +168,7 @@ Qed.
 Theorem comm_around_a_subgroup : a ∈ G ->
 is_Subgroup_of G (fun x => x ∈ G /\ x @ a = a @ x).
 Proof with atg.
-  intros Ga. is_sgrp.
+  intros Ga. is_.
   - intros x [Gx _]...
   - intros x y [Gx xac] [Hy yac]; split.
     + apply closure...
@@ -350,7 +358,7 @@ Qed.
 
 Theorem conjugate_g__is_iso : is_Isomorphism G G (fun x => g @ x @ g ').
 Proof with atg.
-  is_morph.
+  is_.
   - intros x Gx. apply closure...
   - intros **. rewrite (G.(assoc) (g@a) (g '))
     , <- (G.(assoc) (g '))
@@ -365,8 +373,7 @@ Proof with atg.
     + repeat rewrite assoc...
       rewrite linv, rid, <- assoc, linv...
     + repeat rewrite assoc...
-      rewrite rinv, rid, <- assoc, rinv... 
-  
+      rewrite rinv, rid, <- assoc, rinv...
 Qed.
 
 

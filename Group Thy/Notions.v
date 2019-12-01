@@ -67,4 +67,8 @@ End top.
 
 Notation "A '==' B" := (set_eq A B) (at level 100, no associativity) : group_scope.
 
+Hint Unfold
+  is_assoc is_comm idempotent l_ident r_ident ident
+  l_inv r_inv closed_u closed_b order2 set_eq : grp.
+
 Close Scope group_scope.
