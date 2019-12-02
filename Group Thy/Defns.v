@@ -82,17 +82,16 @@ Section Groups.
 
   Definition grpify (G: Group) : Group := G.
 
-  Corollary sanity_check_is_Group : ∀ (G: Group)
-    (X: is_Group G.(carrier) G.(op) G.(e) G.(inv))
+  Corollary sanity_check_is_Group : ∀ a b c d
+    (X: is_Group a b c d)
     (G' := grpify_is_Group X),
-    G'.(carrier) = G.(carrier) /\
-    G'.(op) = G.(op) /\
-    G'.(e) = G.(e) /\
-    G'.(inv) = G.(inv).
+    G'.(carrier) = a /\
+    G'.(op) = b /\
+    G'.(e) = c /\
+    G'.(inv) = d.
   Proof with auto.
     intros **. destruct X
-      as [A [B [D [E [F [H [I J]]]]]]].
-    destruct G...
+      as [A [B [D [E [F [H [I J]]]]]]]...
   Qed.
 
 End Groups.
@@ -261,6 +260,14 @@ Proof with atg.
   <- (left_can _ Gx' Gx Gg gx'g)...
 Qed.
 
+Theorem bl: ∀ g x y,
+  g ∈ G -> x ∈ G -> y ∈ G ->
+  x ≠ y -> g @ x ≠ g @ y.
+Proof with auto.
+  intros * Gg Gx Gy neq eq.
+  apply neq. apply (left_can g)...
+Qed.
+
 Corollary e_is_ident : ident e.
 Proof. split;atg. Qed.
 
@@ -374,7 +381,7 @@ Proof with atg.
     + rewrite <- subgroup_has_same_e... 
     + intros x Hx.  rewrite <- subgroup_has_same_invs...
   - pose proof H0 as [? [? []]]; split...
-    + admit. 
+    + admit.
 Admitted.
 
 
@@ -469,11 +476,14 @@ Section Normal_subgroups.
     closed_u N G.(inv) /\
     normal N G.
 
-  Definition nmod_conjugate (N: Ensemble C) (G: @Group C): Prop :=
+  Definition nmod_conjugate (N: Ensemble C) (G: @Group C) : Prop :=
     ∀ n g, n ∈ N -> g ∈ G ->      op G (op G g n) (G.(inv) g) ∈ N.
 
-  Definition nmod_comm (N: Ensemble C) (G: @Group C): Prop :=
+  Definition nmod_comm (N: Ensemble C) (G: @Group C) : Prop :=
     ∀ g1 g2, g1 ∈ G -> g2 ∈ G ->    G.(op) g1 g2 ∈ N <-> G.(op) g2 g1 ∈ N.
+
+(*   Definition nmod_cosets (N: Ensemble C) (G: @Group C) : Prop :=
+    ∀ g , (@left_coset C G g N) == (@right_coset C G N g). *)
 
 End Normal_subgroups.
 
