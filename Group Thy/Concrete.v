@@ -30,6 +30,8 @@ Proof with auto with grp.
   - intros [] ?; try apply pos_sub_diag...
 Defined.
 
+Hint Unfold intsWplus : grp.
+
 Lemma evenIntsWplus: @Group Z.
 Proof with auto with grp.
   refine (@mkgroup
@@ -67,19 +69,15 @@ Qed.
 Example even_sg_intsWplus :
   is_Subgroup_of intsWplus (fun x => Even x).
 Proof with atg.
-  is_sgrp; simpl...
+  is_...
+  - intros x [hx ->]. exact I.
   - intros x y [hx ->] [hy ->].
     exists (hx + hy).
     destruct hx, hy; simpl...
-  - intros x y z _ _ _.
-    apply Zplus_assoc_reverse.
   - exists 0...
-  - intros []...
   - intros x [hx ->].
     exists (- hx).
     destruct hx; simpl...
-  - intros [] ?; try apply pos_sub_diag...
-  - intros [] ?; try apply pos_sub_diag...
 Qed.
 
 Close Scope group_scope.

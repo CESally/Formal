@@ -794,6 +794,7 @@ Ltac diso  f := iso2is f;
 
 
 
+
 Section QuotientGroups.
   Context {C: Type}.
   Variables (N G : @Group C).
@@ -812,6 +813,45 @@ End QuotientGroups.
 
 Notation "N '/' G" := (quotient_of_in N G)
                        : group_scope.
+
+
+
+Section DirectProduct.
+  Context {C D: Type}.
+
+  Variables (H: @Group C) (G: @Group D).
+
+  Definition dp : @Group (C * D).
+  Proof with atg.
+  refine (mkgroup
+    (fun (x: C * D) => fst x ∈ H /\ snd x ∈  G)
+    (fun (x y: C * D) => (op H (fst x) (fst y),
+                          op G (snd x) (snd y)))
+    (e H, e G)
+    (fun (x: C * D) => (inv H (fst x), inv G (snd x)))
+    _ _ _ _ _ _ _ _).
+    - intros [a x] [b y] [Ha Gx][Hb Gy]; simpl in *.
+      split; apply closure...
+    - intros [a x] [b y] [c z] [Ha Gx] [Hb Gy] [Hc Gz];
+      simpl in *. repeat rewrite assoc...
+    - split; simpl...
+    - intros [eh eg] _ [Heh Geg]; simpl in *.
+      repeat rewrite lid...
+    - intros [eh eg] _ [He Ge]; simpl in *.
+      repeat rewrite rid...
+    - intros [a x] [Ha Gx]; split;
+      simpl in *; apply invin...
+    - intros [a x] [Ha Gx]; simpl in *.
+      repeat rewrite linv...
+    - intros [a x] [Ha Gx]; simpl in *.
+      repeat rewrite rinv...
+  Qed.
+End DirectProduct.
+
+Notation "H × G" := (dp H G) (at level 90, left associativity).
+
+
+
 
 
 

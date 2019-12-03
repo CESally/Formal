@@ -47,7 +47,7 @@ Definition   ident : Prop := ∀ x, e ∈ D -> x ∈ D ->
 Definition l_inv : Prop := ∀ x, x ∈ D -> inv x @ x = e.
 Definition r_inv : Prop := ∀ x, x ∈ D -> x @ inv x = e.
 
-Definition closed_u : Prop := ∀ x, x ∈ D ->              (inv x) ∈ D.
+Definition closed_u : Prop := ∀ x  , x ∈ D ->              (inv x) ∈ D.
 Definition closed_b : Prop := ∀ x y, x ∈ D -> y ∈ D ->  (x @ y) ∈ D.
 
 (* An element of the carrier if of order 2 (wrt some element e) if, when
