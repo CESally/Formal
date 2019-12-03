@@ -793,6 +793,33 @@ Ltac diso  f := iso2is f;
                 simpl in *.
 
 
+
+Section QuotientGroups.
+  Context {C: Type}.
+  Variables (N G : @Group C).
+
+  Definition quotient_of_in : Ensemble (Ensemble C) :=
+    λ gN, normal_subgroup N G ->
+      ∃ g, g ∈ G /\ gN == @left_coset C G g N.
+
+  Inductive quotient_of_in_ind : Ensemble (Ensemble C) :=
+    qoii: forall g, g ∈ G -> @left_coset C G g N ∈ quotient_of_in_ind.
+  
+
+
+End QuotientGroups.
+
+
+Notation "N '/' G" := (quotient_of_in N G)
+                       : group_scope.
+
+
+
+
+
+
+
+
 Ltac is_ :=
   let three := split;[split|] in
   let four := split;[|split;[|split]] in

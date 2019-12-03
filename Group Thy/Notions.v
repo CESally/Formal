@@ -65,7 +65,7 @@ Definition set_eq (A B: Ensemble C) := ∀ x,
 
 End top.
 
-Notation "A '==' B" := (set_eq A B) (at level 100, no associativity) : group_scope.
+Notation "A '==' B" := (set_eq A B) (at level 79, no associativity) : group_scope.
 
 Hint Unfold
   is_assoc is_comm idempotent l_ident r_ident ident
